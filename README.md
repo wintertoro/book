@@ -1,0 +1,83 @@
+# 📚 My Book Library - OCR Book Catalog
+
+A web application that uses OCR (Optical Character Recognition) to automatically catalog your physical book collection. Simply take photos of your books, and the app will extract book titles and create a searchable digital library.
+
+## Features
+
+- 📸 **Photo Upload**: Take photos or upload images of your book collection
+- 🔍 **OCR Processing**: Automatically extracts book titles from images using Tesseract.js with improved filtering
+- 🚫 **Smart Deduplication**: Advanced fuzzy matching prevents duplicate entries when the same book appears in multiple photos
+- ➕ **Manual Entry**: Add books manually if OCR doesn't capture them
+- 📋 **Searchable Library**: View and search through your cataloged books
+- 📥 **Export Functionality**: Export your library as CSV or JSON
+- 🗑️ **Book Management**: Remove books from your library
+- ⏳ **Progress Indicators**: Visual feedback during OCR processing
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ installed
+- npm, yarn, pnpm, or bun
+
+### Installation
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Run the development server:
+```bash
+npm run dev
+```
+
+3. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## How to Use
+
+1. **Add Books from Photo**: 
+   - Click "Use Camera" to take a photo of your books, or "Choose File" to upload an existing image
+   - Wait for OCR processing (10-30 seconds)
+   - See which books were found and added to your library
+
+2. **Add Books Manually**: 
+   - Click "Add Book Manually" button
+   - Enter the book title and click "Add"
+
+3. **Browse Your Library**: 
+   - Search through your cataloged books using the search bar
+   - View book count and details
+
+4. **Export Your Library**: 
+   - Click "Export CSV" or "Export JSON" to download your library
+
+5. **Manage Books**: 
+   - Delete books by clicking the delete icon on any book card
+
+## Technical Details
+
+- **Framework**: Next.js 16 with App Router
+- **OCR Engine**: Tesseract.js
+- **Storage**: JSON file-based storage (stored in `/data/books.json`)
+- **Styling**: Tailwind CSS
+
+## Notes
+
+- OCR accuracy depends on image quality, lighting, and text clarity
+- The deduplication algorithm uses advanced fuzzy matching with word overlap detection and Levenshtein distance to identify similar titles
+- OCR filtering automatically removes common artifacts like page numbers, dates, ISBNs, and metadata
+- Book data is stored locally in the `data` directory (excluded from git)
+- Processing time varies based on image size and complexity (typically 10-30 seconds)
+
+## Development
+
+The app consists of:
+- `app/page.tsx` - Main page component with library management
+- `app/api/process-image/route.ts` - API endpoint for OCR processing with improved title extraction
+- `app/api/books/route.ts` - API endpoint for book management (GET, POST, DELETE)
+- `app/api/export/route.ts` - API endpoint for exporting books (CSV/JSON)
+- `lib/storage.ts` - Book storage and advanced deduplication logic
+- `components/PhotoUpload.tsx` - Photo upload component with progress indicator
+- `components/BookList.tsx` - Book library display component with search
+- `components/ManualBookEntry.tsx` - Manual book entry form component
