@@ -31,7 +31,7 @@ export default function ManualBookEntry({ onAdd }: ManualBookEntryProps) {
     return (
       <button
         onClick={() => setShowForm(true)}
-        className="px-4 py-1.5 text-xs font-light text-gray-600 hover:text-[var(--foreground)] transition-colors border border-gray-200 hover:border-gray-300"
+        className="px-3 sm:px-4 py-1.5 text-xs font-light text-gray-600 dark:text-gray-400 hover:text-[var(--foreground)] transition-colors border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 whitespace-nowrap"
       >
         Add Manually
       </button>
@@ -40,20 +40,20 @@ export default function ManualBookEntry({ onAdd }: ManualBookEntryProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap sm:flex-nowrap">
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Book title..."
-          className="flex-1 px-0 py-2 bg-transparent border-0 border-b border-gray-200 focus:outline-none focus:border-gray-400 transition-colors text-sm font-light placeholder-gray-400"
+          className="flex-1 min-w-0 px-0 py-2 bg-transparent border-0 border-b border-gray-200 dark:border-gray-700 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors text-sm font-light placeholder-gray-400 dark:placeholder-gray-500"
           disabled={isAdding}
           autoFocus
         />
         <button
           type="submit"
           disabled={!title.trim() || isAdding}
-          className="px-4 py-1.5 text-xs font-light text-gray-600 hover:text-[var(--foreground)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-gray-200 hover:border-gray-300"
+          className="px-3 sm:px-4 py-1.5 text-xs font-light text-gray-600 hover:text-[var(--foreground)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-gray-200 hover:border-gray-300 whitespace-nowrap"
         >
           {isAdding ? 'Adding...' : 'Add'}
         </button>
@@ -63,7 +63,7 @@ export default function ManualBookEntry({ onAdd }: ManualBookEntryProps) {
             setShowForm(false);
             setTitle('');
           }}
-          className="px-4 py-1.5 text-xs font-light text-gray-400 hover:text-gray-600 transition-colors"
+          className="px-3 sm:px-4 py-1.5 text-xs font-light text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors whitespace-nowrap"
         >
           Cancel
         </button>

@@ -9,7 +9,14 @@ export interface Book {
   sourceImage?: string;
 }
 
-const BOOKS_FILE = path.join(process.cwd(), 'data', 'books.json');
+// Get file paths for a specific user
+function getBooksFile(userId: string): string {
+  return path.join(process.cwd(), 'data', `books-${userId}.json`);
+}
+
+function getWishListFile(userId: string): string {
+  return path.join(process.cwd(), 'data', `wishlist-${userId}.json`);
+}
 
 // Ensure data directory exists
 async function ensureDataDir() {
@@ -126,21 +133,21 @@ function levenshteinDistance(str1: string, str2: string): number {
   return matrix[str2.length][str1.length];
 }
 
-export async function getAllBooks(): Promise<Book[]> {
+export async function getAllBooks(userId: string): Promise<Book[]> {
   await ensureDataDir();
   
   try {
-    const data = await fs.readFile(BOOKS_FILE, 'utf-8');
+    const data = await fs.readFile(getBooksFile(userId), 'utf-8');
     return JSON.parse(data);
   } catch {
     return [];
   }
 }
 
-export async function addBook(title: string, sourceImage?: string): Promise<{ book: Book | null; isDuplicate: boolean }> {
+export async function addBook(userId: string, title: string, sourceImage?: string): Promise<{ book: Book | null; isDuplicate: boolean }> {
   await ensureDataDir();
   
-  const books = await getAllBooks();
+  const books = await getAllBooks(userId);
   
   // Check for duplicates
   if (isDuplicate(title, books)) {
@@ -155,22 +162,125 @@ export async function addBook(title: string, sourceImage?: string): Promise<{ bo
   };
   
   books.push(newBook);
-  await fs.writeFile(BOOKS_FILE, JSON.stringify(books, null, 2));
+  await fs.writeFile(getBooksFile(userId), JSON.stringify(books, null, 2));
   
   return { book: newBook, isDuplicate: false };
 }
 
-export async function deleteBook(id: string): Promise<boolean> {
+export async function deleteBook(userId: string, id: string): Promise<boolean> {
   await ensureDataDir();
   
-  const books = await getAllBooks();
+  const books = await getAllBooks(userId);
   const filtered = books.filter(book => book.id !== id);
   
   if (filtered.length === books.length) {
     return false; // Book not found
   }
   
-  await fs.writeFile(BOOKS_FILE, JSON.stringify(filtered, null, 2));
+  await fs.writeFile(getBooksFile(userId), JSON.stringify(filtered, null, 2));
   return true;
+}
+
+// Wish list functions
+export async function getAllWishList(userId: string): Promise<Book[]> {
+  await ensureDataDir();
+  
+  try {
+    const data = await fs.readFile(getWishListFile(userId), 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+export async function addToWishList(userId: string, title: string, sourceImage?: string): Promise<{ book: Book | null; isDuplicate: boolean }> {
+  await ensureDataDir();
+  
+  const wishList = await getAllWishList(userId);
+  
+  // Check for duplicates in wish list
+  if (isDuplicate(title, wishList)) {
+    return { book: null, isDuplicate: true };
+  }
+  
+  const newBook: Book = {
+    id: uuidv4(),
+    title: title.trim(),
+    addedAt: new Date().toISOString(),
+    sourceImage,
+  };
+  
+  wishList.push(newBook);
+  await fs.writeFile(getWishListFile(userId), JSON.stringify(wishList, null, 2));
+  
+  return { book: newBook, isDuplicate: false };
+}
+
+export async function deleteFromWishList(userId: string, id: string): Promise<boolean> {
+  await ensureDataDir();
+  
+  const wishList = await getAllWishList(userId);
+  const filtered = wishList.filter(book => book.id !== id);
+  
+  if (filtered.length === wishList.length) {
+    return false; // Book not found
+  }
+  
+  await fs.writeFile(getWishListFile(userId), JSON.stringify(filtered, null, 2));
+  return true;
+}
+
+export async function moveToLibrary(userId: string, wishListId: string): Promise<{ book: Book | null; isDuplicate: boolean }> {
+  await ensureDataDir();
+  
+  const wishList = await getAllWishList(userId);
+  const book = wishList.find(b => b.id === wishListId);
+  
+  if (!book) {
+    return { book: null, isDuplicate: false };
+  }
+  
+  // Check if already in library
+  const books = await getAllBooks(userId);
+  if (isDuplicate(book.title, books)) {
+    return { book: null, isDuplicate: true };
+  }
+  
+  // Add to library
+  const result = await addBook(userId, book.title, book.sourceImage);
+  
+  // Remove from wish list
+  if (result.book) {
+    await deleteFromWishList(userId, wishListId);
+  }
+  
+  return result;
+}
+
+export async function moveToWishList(userId: string, bookId: string): Promise<{ book: Book | null; isDuplicate: boolean }> {
+  await ensureDataDir();
+  
+  const books = await getAllBooks(userId);
+  const book = books.find(b => b.id === bookId);
+  
+  if (!book) {
+    return { book: null, isDuplicate: false };
+  }
+  
+  // Check if already in wish list
+  const wishList = await getAllWishList(userId);
+  if (isDuplicate(book.title, wishList)) {
+    return { book: null, isDuplicate: true };
+  }
+  
+  // Add to wish list
+  const result = await addToWishList(userId, book.title, book.sourceImage);
+  
+  // Remove from library
+  if (result.book) {
+    await deleteBook(userId, bookId);
+  }
+  
+  return result;
 }
 

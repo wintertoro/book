@@ -4,6 +4,8 @@ A web application that uses OCR (Optical Character Recognition) to automatically
 
 ## Features
 
+- 🔐 **Google SSO**: Secure authentication with Google Sign-In
+- 👤 **User-Specific Libraries**: Each user has their own private book collection
 - 📸 **Photo Upload**: Take photos or upload images of your book collection
 - 🔍 **OCR Processing**: Automatically extracts book titles from images using Tesseract.js with improved filtering
 - 🚫 **Smart Deduplication**: Advanced fuzzy matching prevents duplicate entries when the same book appears in multiple photos
@@ -19,6 +21,7 @@ A web application that uses OCR (Optical Character Recognition) to automatically
 
 - Node.js 18+ installed
 - npm, yarn, pnpm, or bun
+- Google Cloud Console account (for OAuth setup)
 
 ### Installation
 
@@ -27,12 +30,35 @@ A web application that uses OCR (Optical Character Recognition) to automatically
 npm install
 ```
 
-2. Run the development server:
+2. Set up Google OAuth:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Enable the Google+ API
+   - Go to "Credentials" → "Create Credentials" → "OAuth client ID"
+   - Choose "Web application"
+   - Add authorized redirect URI: `http://localhost:3000/api/auth/callback/google` (for development)
+   - Copy the Client ID and Client Secret
+
+3. Create a `.env.local` file in the root directory:
+```bash
+# Generate a secret key (run: openssl rand -base64 32)
+AUTH_SECRET=your-generated-secret-key-here
+
+# Google OAuth Credentials
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# For production, set this to your domain
+NEXTAUTH_URL=http://localhost:3000
+```
+
+4. Run the development server:
 ```bash
 npm run dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+6. Sign in with your Google account to access your personal book library
 
 ## How to Use
 
@@ -58,17 +84,20 @@ npm run dev
 ## Technical Details
 
 - **Framework**: Next.js 16 with App Router
+- **Authentication**: NextAuth.js v5 with Google OAuth provider
 - **OCR Engine**: Tesseract.js
-- **Storage**: JSON file-based storage (stored in `/data/books.json`)
+- **Storage**: JSON file-based storage (user-specific files stored in `/data/books-{userId}.json`)
 - **Styling**: Tailwind CSS with modern minimalist design
 
 ## Notes
 
-- OCR accuracy depends on image quality, lighting, and text clarity
-- The deduplication algorithm uses advanced fuzzy matching with word overlap detection and Levenshtein distance to identify similar titles
-- OCR filtering automatically removes common artifacts like page numbers, dates, ISBNs, and metadata
-- Book data is stored locally in the `data` directory (excluded from git)
-- Processing time varies based on image size and complexity (typically 10-30 seconds)
+- **Authentication**: All routes are protected and require Google sign-in
+- **User Data**: Each user's books are stored in separate files (`books-{userId}.json` and `wishlist-{userId}.json`)
+- **OCR Accuracy**: Depends on image quality, lighting, and text clarity
+- **Deduplication**: Uses advanced fuzzy matching with word overlap detection and Levenshtein distance to identify similar titles
+- **OCR Filtering**: Automatically removes common artifacts like page numbers, dates, ISBNs, and metadata
+- **Storage**: Book data is stored locally in the `data` directory (excluded from git)
+- **Processing Time**: Varies based on image size and complexity (typically 10-30 seconds)
 
 ## Development
 

@@ -3,23 +3,23 @@
 import { Book } from '@/lib/storage';
 import { useState } from 'react';
 
-interface BookListProps {
-  books: Book[];
+interface WishListProps {
+  wishList: Book[];
   onDelete: (id: string) => Promise<void>;
-  onMoveToWishList?: (id: string) => Promise<void>;
+  onMoveToLibrary: (id: string) => Promise<void>;
 }
 
-export default function BookList({ books, onDelete, onMoveToWishList }: BookListProps) {
+export default function WishList({ wishList, onDelete, onMoveToLibrary }: WishListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredBooks = books.filter(book =>
+  const filteredWishList = wishList.filter(book =>
     book.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this book from your library?')) {
+    if (!confirm('Are you sure you want to remove this book from your wish list?')) {
       return;
     }
     
@@ -27,32 +27,30 @@ export default function BookList({ books, onDelete, onMoveToWishList }: BookList
     try {
       await onDelete(id);
     } catch (error) {
-      console.error('Error deleting book:', error);
-      alert('Failed to delete book');
+      console.error('Error deleting from wish list:', error);
+      alert('Failed to delete from wish list');
     } finally {
       setDeletingId(null);
     }
   };
 
-  const handleMoveToWishList = async (id: string) => {
-    if (!onMoveToWishList) return;
-    
+  const handleMoveToLibrary = async (id: string) => {
     setMovingId(id);
     try {
-      await onMoveToWishList(id);
+      await onMoveToLibrary(id);
     } catch (error) {
-      console.error('Error moving to wish list:', error);
-      alert('Failed to move to wish list');
+      console.error('Error moving to library:', error);
+      alert('Failed to move to library');
     } finally {
       setMovingId(null);
     }
   };
 
-  if (books.length === 0) {
+  if (wishList.length === 0) {
     return (
       <div className="text-center py-20 text-gray-400">
-        <p className="text-sm font-light mb-1">Your library is empty</p>
-        <p className="text-xs font-light">Upload a photo to get started</p>
+        <p className="text-sm font-light mb-1">Your wish list is empty</p>
+        <p className="text-xs font-light">Add books you want to read</p>
       </div>
     );
   }
@@ -69,13 +67,13 @@ export default function BookList({ books, onDelete, onMoveToWishList }: BookList
         />
         {searchTerm && (
           <p className="text-xs text-gray-400 mt-2 font-light">
-            {filteredBooks.length} of {books.length}
+            {filteredWishList.length} of {wishList.length}
           </p>
         )}
       </div>
 
       <div className="space-y-1">
-        {filteredBooks.map((book) => (
+        {filteredWishList.map((book) => (
           <div
             key={book.id}
             className="group flex items-center justify-between py-3 px-0 border-b border-gray-100 hover:border-gray-200 transition-colors"
@@ -93,21 +91,19 @@ export default function BookList({ books, onDelete, onMoveToWishList }: BookList
               </p>
             </div>
             <div className="ml-4 flex gap-2 sm:gap-3 items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-              {onMoveToWishList && (
-                <button
-                  onClick={() => handleMoveToWishList(book.id)}
-                  disabled={movingId === book.id || deletingId === book.id}
-                  className="text-xs font-light text-gray-400 hover:text-blue-600 disabled:opacity-30 transition-colors"
-                  title="Move to wish list"
-                >
-                  {movingId === book.id ? 'Moving...' : '→ Wish List'}
-                </button>
-              )}
+              <button
+                onClick={() => handleMoveToLibrary(book.id)}
+                disabled={movingId === book.id || deletingId === book.id}
+                className="text-xs font-light text-gray-400 hover:text-blue-600 disabled:opacity-30 transition-colors"
+                title="Move to library"
+              >
+                {movingId === book.id ? 'Moving...' : '→ Library'}
+              </button>
               <button
                 onClick={() => handleDelete(book.id)}
                 disabled={deletingId === book.id || movingId === book.id}
                 className="text-xs font-light text-gray-300 hover:text-gray-500 disabled:opacity-30 transition-colors"
-                title="Delete book"
+                title="Remove from wish list"
               >
                 {deletingId === book.id ? 'Removing...' : 'Remove'}
               </button>
@@ -116,7 +112,7 @@ export default function BookList({ books, onDelete, onMoveToWishList }: BookList
         ))}
       </div>
 
-      {filteredBooks.length === 0 && searchTerm && (
+      {filteredWishList.length === 0 && searchTerm && (
         <div className="text-center py-12 text-gray-400">
           <p className="text-xs font-light">No results for "{searchTerm}"</p>
         </div>

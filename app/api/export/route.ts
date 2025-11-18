@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { getAllBooks } from '@/lib/storage';
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'json';
     
-    const books = await getAllBooks();
+    const books = await getAllBooks(session.user.id);
     
     if (format === 'csv') {
       // Generate CSV

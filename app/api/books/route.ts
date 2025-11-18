@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { getAllBooks, deleteBook, addBook } from '@/lib/storage';
 
 export async function GET() {
   try {
-    const books = await getAllBooks();
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    const books = await getAllBooks(session.user.id);
     return NextResponse.json({ books });
   } catch (error) {
     console.error('Error fetching books:', error);
@@ -16,6 +25,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
     const { title } = await request.json();
     
     if (!title || typeof title !== 'string' || !title.trim()) {
@@ -25,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const result = await addBook(title.trim());
+    const result = await addBook(session.user.id, title.trim());
     
     return NextResponse.json({
       success: true,
@@ -43,6 +60,14 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
@@ -53,7 +78,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const success = await deleteBook(id);
+    const success = await deleteBook(session.user.id, id);
     
     if (!success) {
       return NextResponse.json(
