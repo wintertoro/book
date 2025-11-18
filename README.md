@@ -1,4 +1,4 @@
-# 📚 My Book Library - OCR Book Catalog
+# Book Library - OCR Book Catalog
 
 A web application that uses OCR (Optical Character Recognition) to automatically catalog your physical book collection. Simply take photos of your books, and the app will extract book titles and create a searchable digital library.
 
@@ -37,12 +37,12 @@ npm run dev
 ## How to Use
 
 1. **Add Books from Photo**: 
-   - Click "Use Camera" to take a photo of your books, or "Choose File" to upload an existing image
+   - Click "Camera" to take a photo of your books, or "Choose File" to upload an existing image
    - Wait for OCR processing (10-30 seconds)
    - See which books were found and added to your library
 
 2. **Add Books Manually**: 
-   - Click "Add Book Manually" button
+   - Click "Add Manually" button
    - Enter the book title and click "Add"
 
 3. **Browse Your Library**: 
@@ -50,17 +50,17 @@ npm run dev
    - View book count and details
 
 4. **Export Your Library**: 
-   - Click "Export CSV" or "Export JSON" to download your library
+   - Click "CSV" or "JSON" to download your library
 
 5. **Manage Books**: 
-   - Delete books by clicking the delete icon on any book card
+   - Delete books by hovering over a book and clicking "Remove"
 
 ## Technical Details
 
 - **Framework**: Next.js 16 with App Router
 - **OCR Engine**: Tesseract.js
 - **Storage**: JSON file-based storage (stored in `/data/books.json`)
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS with modern minimalist design
 
 ## Notes
 
