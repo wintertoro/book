@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import QuoteHighlight from '@/components/QuoteHighlight';
 import { Book, Quote, PagePhoto } from '@/lib/storage';
@@ -17,13 +17,11 @@ export default function BookDetailPage() {
   const [selectedPagePhoto, setSelectedPagePhoto] = useState<PagePhoto | null>(null);
   const [pageNumber, setPageNumber] = useState<string>('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [movingToWishlist, setMovingToWishlist] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasSearchedAuthorRef = useRef(false);
 
-  useEffect(() => {
-    loadBook();
-  }, [bookId]);
-
-  const loadBook = async () => {
+  const loadBook = useCallback(async () => {
     try {
       const response = await fetch(`/api/books/${bookId}`);
       if (!response.ok) throw new Error('Failed to load book');
@@ -35,7 +33,45 @@ export default function BookDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookId]);
+
+  useEffect(() => {
+    loadBook();
+  }, [loadBook]);
+
+  // Automatically search for author if book doesn't have one
+  useEffect(() => {
+    const searchForAuthor = async () => {
+      if (book && !book.author && !hasSearchedAuthorRef.current) {
+        hasSearchedAuthorRef.current = true;
+        try {
+          const response = await fetch(`/api/books/${bookId}/author`, {
+            method: 'POST',
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.wasUpdated && data.author) {
+              // Reload the book to get the updated author
+              await loadBook();
+            }
+          }
+        } catch (error) {
+          console.error('Error searching for author:', error);
+          // Silently fail - don't show error to user
+        }
+      }
+    };
+
+    if (book) {
+      searchForAuthor();
+    }
+  }, [book, bookId, loadBook]);
+
+  // Reset the search flag when bookId changes
+  useEffect(() => {
+    hasSearchedAuthorRef.current = false;
+  }, [bookId]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -157,6 +193,49 @@ export default function BookDetailPage() {
     }
   };
 
+  const handleMoveToWishlist = async () => {
+    if (!confirm('Move this book to your wish list?')) return;
+
+    setMovingToWishlist(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'move-from-library',
+          id: bookId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to move to wish list');
+      }
+
+      const data = await response.json();
+      
+      if (data.isDuplicate) {
+        setMessage({ type: 'error', text: 'This book is already in your wish list' });
+      } else {
+        setMessage({ type: 'success', text: 'Moved to wish list' });
+        // Redirect to home page after a short delay
+        setTimeout(() => {
+          router.push('/');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error moving to wish list:', error);
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to move to wish list',
+      });
+    } finally {
+      setMovingToWishlist(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -205,13 +284,42 @@ export default function BookDetailPage() {
       <main className="pt-24 sm:pt-32 px-4 sm:px-6 max-w-7xl mx-auto space-y-8">
         {/* Book Header */}
         <div className="space-y-4">
-          <h1 className="text-4xl sm:text-5xl font-bold">{book.title}</h1>
-          {book.genres && book.genres.length > 0 && (
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-medium">Genres: </span>
-              <span>{book.genres.join(', ')}</span>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-4xl sm:text-5xl font-bold">{book.title}</h1>
+              {book.author && (
+                <div className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                  <span className="font-medium">by {book.author}</span>
+                </div>
+              )}
+              {book.genres && book.genres.length > 0 && (
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  <span className="font-medium">Genres: </span>
+                  <span>{book.genres.join(', ')}</span>
+                </div>
+              )}
             </div>
-          )}
+            <button
+              onClick={handleMoveToWishlist}
+              disabled={movingToWishlist}
+              className="px-4 py-2 text-sm font-medium bg-white dark:bg-black text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
+              title="Move to wish list"
+            >
+              {movingToWishlist ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  Moving...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                  Move to Wish List
+                </>
+              )}
+            </button>
+          </div>
           <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
             <span>
               Added: {(() => {

@@ -1,6 +1,6 @@
 /**
  * Genre tagging service using Open Library API
- * Automatically tags books with genres based on their title
+ * Automatically tags books with genres based on their title and author (when available)
  */
 
 interface OpenLibraryWork {
@@ -111,53 +111,121 @@ function extractGenres(subjects: string[]): string[] {
 /**
  * Search for a book in Open Library and return its genres
  */
-export async function getBookGenres(title: string): Promise<string[]> {
-  try {
-    // Search for the book
-    const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&limit=1`;
-    const searchResponse = await fetch(searchUrl);
-    
-    if (!searchResponse.ok) {
-      console.warn(`Open Library search failed for "${title}"`);
-      return [];
-    }
-    
-    const searchData: OpenLibrarySearchResult = await searchResponse.json();
-    
-    if (!searchData.docs || searchData.docs.length === 0) {
-      return [];
-    }
-    
-    const book = searchData.docs[0];
-    
-    // Get detailed work information
-    if (book.key) {
-      const workKey = book.key.startsWith('/works/') 
-        ? book.key 
-        : `/works/${book.key}`;
+export async function getBookGenres(title: string, author?: string): Promise<string[]> {
+  const maxRetries = 3;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Search for the book - include author if available for better matching
+      let searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&limit=5`;
+      if (author) {
+        searchUrl += `&author=${encodeURIComponent(author)}`;
+      }
       
-      const workUrl = `https://openlibrary.org${workKey}.json`;
-      const workResponse = await fetch(workUrl);
+      // Increase timeout for fetch requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      if (workResponse.ok) {
-        const workData: OpenLibraryWork = await workResponse.json();
-        
-        if (workData.subjects && workData.subjects.length > 0) {
-          return extractGenres(workData.subjects);
+      let searchResponse;
+      try {
+        searchResponse = await fetch(searchUrl, {
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      
+      if (!searchResponse.ok) {
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+          continue;
+        }
+        console.warn(`Open Library search failed for "${title}"`);
+        return [];
+      }
+    
+      let searchData: OpenLibrarySearchResult;
+      try {
+        searchData = await searchResponse.json();
+      } catch (error) {
+        console.warn(`Failed to parse search response for "${title}"`);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          continue;
+        }
+        return [];
+      }
+    
+      if (!searchData.docs || searchData.docs.length === 0) {
+        return [];
+      }
+    
+      // If author was provided, try to find the best match
+      let book = searchData.docs[0];
+      if (author) {
+        const authorLower = author.toLowerCase();
+        const bestMatch = searchData.docs.find(doc => 
+          doc.author_name?.some(a => a.toLowerCase().includes(authorLower) || authorLower.includes(a.toLowerCase()))
+        );
+        if (bestMatch) {
+          book = bestMatch;
         }
       }
-    }
     
-    // Fallback to subjects from search result
-    if (book.subject && book.subject.length > 0) {
-      return extractGenres(book.subject);
-    }
+      // Get detailed work information
+      if (book.key) {
+        const workKey = book.key.startsWith('/works/') 
+          ? book.key 
+          : `/works/${book.key}`;
+        
+        const workUrl = `https://openlibrary.org${workKey}.json`;
+        const workController = new AbortController();
+        const workTimeoutId = setTimeout(() => workController.abort(), 30000);
+        
+        try {
+          const workResponse = await fetch(workUrl, {
+            signal: workController.signal,
+          });
+          
+          if (workResponse.ok) {
+            try {
+              const workData: OpenLibraryWork = await workResponse.json();
+            
+              if (workData.subjects && workData.subjects.length > 0) {
+                clearTimeout(workTimeoutId);
+                return extractGenres(workData.subjects);
+              }
+            } catch (error) {
+              console.warn(`Failed to parse work data for "${title}"`);
+              // Fall through to use search result subjects
+            }
+          }
+        } catch (error) {
+          // If work fetch fails, fall through to use search result subjects
+          console.warn(`Failed to fetch work details for "${title}", using search result subjects`);
+        } finally {
+          clearTimeout(workTimeoutId);
+        }
+      }
     
-    return [];
-  } catch (error) {
-    console.error(`Error fetching genres for "${title}":`, error);
-    return [];
+      // Fallback to subjects from search result
+      if (book.subject && book.subject.length > 0) {
+        return extractGenres(book.subject);
+      }
+    
+      return [];
+    } catch (error) {
+      if (attempt < maxRetries) {
+        console.warn(`Attempt ${attempt} failed for "${title}", retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+        continue;
+      }
+      console.error(`Error fetching genres for "${title}" after ${maxRetries} attempts:`, error);
+      return [];
+    }
   }
+  
+  return [];
 }
 
 /**
@@ -166,8 +234,14 @@ export async function getBookGenres(title: string): Promise<string[]> {
 const genreCache = new Map<string, { genres: string[]; timestamp: number }>();
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-export async function tagBookWithGenres(title: string): Promise<string[]> {
-  const cacheKey = title.toLowerCase().trim();
+export async function tagBookWithGenres(title: string, author?: string): Promise<string[]> {
+  // Normalize author - treat empty strings as undefined
+  const normalizedAuthor = author?.trim() || undefined;
+  
+  // Include author in cache key for better accuracy
+  const cacheKey = normalizedAuthor 
+    ? `${title.toLowerCase().trim()}|${normalizedAuthor.toLowerCase().trim()}`
+    : title.toLowerCase().trim();
   const cached = genreCache.get(cacheKey);
   
   // Check cache
@@ -176,7 +250,7 @@ export async function tagBookWithGenres(title: string): Promise<string[]> {
   }
   
   // Fetch genres
-  const genres = await getBookGenres(title);
+  const genres = await getBookGenres(title, normalizedAuthor);
   
   // Cache the result
   genreCache.set(cacheKey, {

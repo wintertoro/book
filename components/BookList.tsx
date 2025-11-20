@@ -1,7 +1,7 @@
 'use client';
 
 import { Book } from '@/lib/storage';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface BookListProps {
@@ -19,6 +19,7 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
   const [selectedGenres, setSelectedGenres] = useState<Set<string>>(new Set());
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [showGenreFilter, setShowGenreFilter] = useState(false);
+  const searchedAuthorIdsRef = useRef<Set<string>>(new Set());
 
   // Extract all unique genres from books
   const allGenres = useMemo(() => {
@@ -34,9 +35,10 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
   // Filter books by search term and selected genres
   const filteredBooks = useMemo(() => {
     return books.filter(book => {
-      // Search filter (title and genres)
+      // Search filter (title, author, and genres)
       const matchesSearch = searchTerm === '' || 
         book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (book.author && book.author.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (book.genres && book.genres.some(genre => 
           genre.toLowerCase().includes(searchTerm.toLowerCase())
         ));
@@ -124,6 +126,51 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
 
   const booksWithoutGenres = books.filter(book => !book.genres || book.genres.length === 0).length;
 
+  // Automatically search for authors when books without authors are loaded
+  useEffect(() => {
+    const searchForMissingAuthors = async () => {
+      const booksWithoutAuthors = books.filter(
+        book => !book.author && !searchedAuthorIdsRef.current.has(book.id)
+      );
+
+      if (booksWithoutAuthors.length === 0) {
+        return;
+      }
+
+      // Search for authors one at a time to avoid rate limiting
+      for (const book of booksWithoutAuthors.slice(0, 5)) { // Limit to 5 at a time
+        searchedAuthorIdsRef.current.add(book.id);
+        
+        try {
+          const response = await fetch(`/api/books/${book.id}/author`, {
+            method: 'POST',
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.wasUpdated && onBooksUpdated) {
+              // Small delay before refreshing to allow multiple updates to batch
+              setTimeout(() => {
+                onBooksUpdated();
+              }, 1000);
+            }
+          }
+        } catch (error) {
+          console.error(`Error searching for author for "${book.title}":`, error);
+        } finally {
+          // Add delay between searches to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    };
+
+    // Only search if there are books without authors
+    if (books.length > 0) {
+      searchForMissingAuthors();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [books.map(b => `${b.id}-${b.author || ''}`).join(',')]);
+
   if (books.length === 0) {
     return (
       <div className="text-center py-20 text-[var(--color-gray-400)] glass rounded-2xl border-dashed border-[var(--color-gray-200)] dark:border-[var(--color-gray-800)]">
@@ -146,7 +193,7 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
           </div>
           <input
             type="text"
-            placeholder="Search by title or genre..."
+            placeholder="Search by title, author, or genre..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-4 bg-white/50 dark:bg-[var(--color-background)]/50 backdrop-blur-sm border border-[var(--color-gray-200)] dark:border-[var(--color-gray-700)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)]/20 focus:border-[var(--color-foreground)] transition-all text-base shadow-sm"
@@ -255,10 +302,17 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
                   onClick={() => router.push(`/books/${book.id}`)}
                   className="text-left w-full"
                 >
-                  <h3 className="text-base font-semibold text-[var(--color-foreground)] leading-tight line-clamp-2 mb-2 group-hover:text-[var(--color-gray-600)] dark:group-hover:text-[var(--color-gray-400)] transition-colors hover:underline">
+                  <h3 className="text-base font-semibold text-[var(--color-foreground)] leading-tight line-clamp-2 mb-1 group-hover:text-[var(--color-gray-600)] dark:group-hover:text-[var(--color-gray-400)] transition-colors hover:underline">
                     {book.title}
                   </h3>
                 </button>
+                {book.author && (
+                  <div className="mb-2">
+                    <span className="text-sm text-[var(--color-gray-600)] dark:text-[var(--color-gray-400)] font-medium">
+                      by {book.author}
+                    </span>
+                  </div>
+                )}
                 {book.genres && book.genres.length > 0 && (
                   <div className="mb-2">
                     <span className="text-xs text-[var(--color-gray-600)] dark:text-[var(--color-gray-400)] font-medium">

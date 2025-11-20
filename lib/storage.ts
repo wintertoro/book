@@ -193,8 +193,8 @@ export async function addBook(userId: string, title: string, sourceImage?: strin
     return { book: null, isDuplicate: true };
   }
   
-  // Auto-tag with genres (async, don't block)
-  const genres = await tagBookWithGenres(title.trim()).catch(() => []);
+  // Auto-tag with genres (async, don't block) - use author if available for better matching
+  const genres = await tagBookWithGenres(title.trim(), author?.trim()).catch(() => []);
   
   const newBook: Book = {
     id: uuidv4(),
@@ -303,10 +303,10 @@ export async function moveToLibrary(userId: string, wishListId: string): Promise
     return { book: null, isDuplicate: true };
   }
   
-  // Create book with preserved genres
+  // Create book with preserved genres - use author if available for better matching
   const genres = book.genres && book.genres.length > 0 
     ? book.genres 
-    : await tagBookWithGenres(book.title).catch(() => []);
+    : await tagBookWithGenres(book.title, book.author).catch(() => []);
   
   const newBook: Book = {
     id: uuidv4(),
@@ -384,7 +384,8 @@ export async function backfillGenres(userId: string): Promise<{ updated: number;
     }
     
     try {
-      const genres = await tagBookWithGenres(book.title);
+      // Use author if available for better genre matching
+      const genres = await tagBookWithGenres(book.title, book.author);
       if (genres.length > 0) {
         book.genres = genres;
         updated++;
@@ -396,6 +397,64 @@ export async function backfillGenres(userId: string): Promise<{ updated: number;
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
       console.error(`Failed to tag genres for "${book.title}":`, error);
+      failed++;
+    }
+  }
+  
+  // Save updated books
+  if (updated > 0) {
+    await fs.writeFile(getBooksFile(userId), JSON.stringify(books, null, 2));
+  }
+  
+  return { updated, failed };
+}
+
+// Update book author
+export async function updateBookAuthor(userId: string, bookId: string, author: string): Promise<boolean> {
+  await ensureDataDir();
+  
+  const books = await getAllBooks(userId);
+  const bookIndex = books.findIndex(b => b.id === bookId);
+  
+  if (bookIndex === -1) {
+    return false;
+  }
+  
+  books[bookIndex].author = author.trim() || undefined;
+  await fs.writeFile(getBooksFile(userId), JSON.stringify(books, null, 2));
+  
+  return true;
+}
+
+// Backfill authors for all books without authors
+export async function backfillAuthors(userId: string): Promise<{ updated: number; failed: number }> {
+  await ensureDataDir();
+  
+  const books = await getAllBooks(userId);
+  let updated = 0;
+  let failed = 0;
+  
+  const { getBookAuthor } = await import('@/lib/author-search');
+  
+  for (const book of books) {
+    // Skip if already has author
+    if (book.author && book.author.trim().length > 0) {
+      continue;
+    }
+    
+    try {
+      const author = await getBookAuthor(book.title);
+      if (author) {
+        book.author = author;
+        updated++;
+      } else {
+        failed++;
+      }
+      
+      // Add a small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error(`Failed to find author for "${book.title}":`, error);
       failed++;
     }
   }
