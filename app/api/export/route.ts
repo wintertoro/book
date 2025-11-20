@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getAllBooks } from '@/lib/storage';
+import { getCoordinator } from '@/lib/agents/coordinator';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,39 +13,37 @@ export async function GET(request: NextRequest) {
     }
     
     const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format') || 'json';
+    const format = (searchParams.get('format') || 'json') as 'csv' | 'json';
     
-    const books = await getAllBooks(session.user.id);
+    const coordinator = getCoordinator();
+    const context = coordinator.createContext(session);
+    
+    const result = await coordinator.executeAgent('export', context, {
+      format,
+    });
+    
+    if (!result.success || !result.data) {
+      return NextResponse.json(
+        { error: result.error || 'Failed to export books' },
+        { status: 500 }
+      );
+    }
+    
+    const exportData = result.data;
     
     if (format === 'csv') {
-      // Generate CSV
-      const headers = ['Title', 'Added Date'];
-      const rows = books.map(book => [
-        `"${book.title.replace(/"/g, '""')}"`,
-        new Date(book.addedAt).toLocaleDateString(),
-      ]);
-      
-      const csv = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
-      ].join('\n');
-      
-      return new NextResponse(csv, {
+      return new NextResponse(exportData.content as string, {
         headers: {
-          'Content-Type': 'text/csv',
-          'Content-Disposition': 'attachment; filename="book-library.csv"',
+          'Content-Type': exportData.mimeType,
+          'Content-Disposition': `attachment; filename="${exportData.filename}"`,
         },
       });
     } else {
-      // Generate JSON
-      return NextResponse.json(
-        { books },
-        {
-          headers: {
-            'Content-Disposition': 'attachment; filename="book-library.json"',
-          },
-        }
-      );
+      return NextResponse.json(exportData.content, {
+        headers: {
+          'Content-Disposition': `attachment; filename="${exportData.filename}"`,
+        },
+      });
     }
   } catch (error) {
     console.error('Error exporting books:', error);

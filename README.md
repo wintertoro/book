@@ -1,45 +1,89 @@
-# Book Library - OCR Book Catalog
+# 📚 Digital Library - AI-Powered Book Catalog
 
-A web application that uses OCR (Optical Character Recognition) to automatically catalog your physical book collection. Simply take photos of your books, and the app will extract book titles and create a searchable digital library.
+A sleek, modern web application that uses OCR (Optical Character Recognition) to automatically catalog your physical book collection. Simply take photos of your books, and the app will extract book titles and create a beautiful, searchable digital library.
 
-## Features
+![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-16.0.1-black)
+![React](https://img.shields.io/badge/React-19.2.0-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 
-- 🔐 **Google SSO**: Secure authentication with Google Sign-In
-- 👤 **User-Specific Libraries**: Each user has their own private book collection
-- 📸 **Photo Upload**: Take photos or upload images of your book collection
-- 🔍 **OCR Processing**: Automatically extracts book titles from images using Tesseract.js with improved filtering
-- 🚫 **Smart Deduplication**: Advanced fuzzy matching prevents duplicate entries when the same book appears in multiple photos
-- ➕ **Manual Entry**: Add books manually if OCR doesn't capture them
-- 📋 **Searchable Library**: View and search through your cataloged books
-- 📥 **Export Functionality**: Export your library as CSV or JSON
-- 🗑️ **Book Management**: Remove books from your library
-- ⏳ **Progress Indicators**: Visual feedback during OCR processing
+## ✨ Features
 
-## Getting Started
+### 🔒 **Authentication & Privacy**
+- Secure Google SSO authentication
+- User-specific libraries with isolated data storage
+- Protected routes requiring authentication
+
+### 📸 **Smart Book Detection**
+- Photo upload with camera or file selection
+- Advanced OCR processing using Tesseract.js
+- Intelligent title extraction with filtering of page numbers, ISBNs, and metadata
+- Real-time progress indicators during processing
+
+### 📖 **Library Management**
+- **My Library**: Track books you own
+- **Wish List**: Curate books you want to read
+- Move books seamlessly between library and wish list
+- One-click Amazon purchase links for wishlist items
+- Smart deduplication with fuzzy matching
+
+### 🎨 **Modern UI/UX**
+- **Glassmorphism** design with backdrop blur effects
+- **Dark mode** support with system preference detection
+- Responsive layout optimized for mobile and desktop
+- Smooth animations and micro-interactions
+- Premium gradient text effects
+- Hover-activated actions for clean interface
+
+### 📥 **Data Management**
+- Manual book entry for quick additions
+- Review detected books before adding to library
+- Export library as CSV or JSON
+- Searchable book collections
+- Delete or move books with ease
+
+### 🔍 **Smart Features**
+- Pending review system for OCR-detected titles
+- Fuzzy matching prevents duplicate entries
+- Progress feedback during image processing
+- Toast notifications for user actions
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ installed
-- npm, yarn, pnpm, or bun
-- Google Cloud Console account (for OAuth setup)
+- **Node.js** 18 or higher
+- **npm**, **yarn**, **pnpm**, or **bun**
+- **Google Cloud Console** account for OAuth setup
 
 ### Installation
 
-1. Install dependencies:
+1. **Clone the repository**:
+```bash
+git clone <repository-url>
+cd book-library
+```
+
+2. **Install dependencies**:
 ```bash
 npm install
 ```
 
-2. Set up Google OAuth:
-   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+3. **Set up Google OAuth**:
+   - Navigate to [Google Cloud Console](https://console.cloud.google.com/)
    - Create a new project or select an existing one
-   - Enable the Google+ API
-   - Go to "Credentials" → "Create Credentials" → "OAuth client ID"
-   - Choose "Web application"
-   - Add authorized redirect URI: `http://localhost:3000/api/auth/callback/google` (for development)
-   - Copy the Client ID and Client Secret
+   - Enable the **Google+ API**
+   - Go to **Credentials** → **Create Credentials** → **OAuth client ID**
+   - Choose **Web application**
+   - Add authorized redirect URIs:
+     - Development: `http://localhost:3000/api/auth/callback/google`
+     - Production: `https://yourdomain.com/api/auth/callback/google`
+   - Copy the **Client ID** and **Client Secret**
 
-3. Create a `.env.local` file in the root directory:
+4. **Create environment variables**:
+
+Create a `.env.local` file in the root directory:
+
 ```bash
 # Generate a secret key (run: openssl rand -base64 32)
 AUTH_SECRET=your-generated-secret-key-here
@@ -48,65 +92,182 @@ AUTH_SECRET=your-generated-secret-key-here
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-# For production, set this to your domain
+# Base URL (update for production)
 NEXTAUTH_URL=http://localhost:3000
 ```
 
-4. Run the development server:
+5. **Run the development server**:
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
-6. Sign in with your Google account to access your personal book library
+6. **Open your browser**:
+Navigate to [http://localhost:3000](http://localhost:3000) and sign in with your Google account.
 
-## How to Use
+## 📖 How to Use
 
-1. **Add Books from Photo**: 
-   - Click "Camera" to take a photo of your books, or "Choose File" to upload an existing image
-   - Wait for OCR processing (10-30 seconds)
-   - See which books were found and added to your library
+### Adding Books from Photos
 
-2. **Add Books Manually**: 
-   - Click "Add Manually" button
-   - Enter the book title and click "Add"
+1. Click the **camera icon** to take a photo or **Choose File** to upload an image
+2. Wait for OCR processing (typically 10-30 seconds)
+3. Review detected book titles in the pending review section
+4. Choose to:
+   - **Add to Library** for books you own
+   - **Add to Wish List** for books you want
+   - **Discard** if incorrectly detected
 
-3. **Browse Your Library**: 
-   - Search through your cataloged books using the search bar
-   - View book count and details
+### Manual Book Entry
 
-4. **Export Your Library**: 
-   - Click "CSV" or "JSON" to download your library
+1. Click the **Add Manually** button
+2. Enter the book title
+3. Review and add to your library or wishlist
 
-5. **Manage Books**: 
-   - Delete books by hovering over a book and clicking "Remove"
+### Managing Your Collection
 
-## Technical Details
+- **Search**: Use the search bar to find books quickly
+- **Move Books**: Click the arrow icon to move between library and wishlist
+- **Delete Books**: Hover over a book card and click the delete icon
+- **Amazon Links**: Click the Amazon link on wishlist items to purchase
 
-- **Framework**: Next.js 16 with App Router
-- **Authentication**: NextAuth.js v5 with Google OAuth provider
-- **OCR Engine**: Tesseract.js
-- **Storage**: JSON file-based storage (user-specific files stored in `/data/books-{userId}.json`)
-- **Styling**: Tailwind CSS with modern minimalist design
+### Exporting Data
 
-## Notes
+- Click **Export CSV** to download your library in spreadsheet format
+- Use the API endpoint `/api/export?format=json` for JSON format
 
-- **Authentication**: All routes are protected and require Google sign-in
-- **User Data**: Each user's books are stored in separate files (`books-{userId}.json` and `wishlist-{userId}.json`)
+### Theme Toggle
+
+- Click the **sun/moon icon** in the header to toggle between light and dark modes
+- Theme preference is saved automatically
+
+## 🛠 Tech Stack
+
+### Frontend
+- **Framework**: Next.js 16 (App Router)
+- **UI Library**: React 19.2
+- **Language**: TypeScript 5
+- **Styling**: Tailwind CSS v4 with custom design system
+- **Theme**: Dark mode with glassmorphism effects
+
+### Backend
+- **Authentication**: NextAuth.js v5 with Google OAuth
+- **OCR Engine**: Tesseract.js 6.0
+- **Storage**: JSON file-based (user-specific files)
+- **API**: Next.js API Routes
+
+### Features
+- Server-side rendering (SSR)
+- Client-side interactivity
+- Protected API routes
+- Responsive design
+
+## 📁 Project Structure
+
+```
+book-library/
+├── app/
+│   ├── api/
+│   │   ├── auth/           # NextAuth.js configuration
+│   │   ├── books/          # Library CRUD operations
+│   │   ├── wishlist/       # Wishlist CRUD operations
+│   │   ├── process-image/  # OCR processing endpoint
+│   │   └── export/         # Data export endpoint
+│   ├── globals.css         # Global styles with glassmorphism
+│   ├── layout.tsx          # Root layout with providers
+│   └── page.tsx            # Main application page
+├── components/
+│   ├── AuthButton.tsx      # Google sign-in/out button
+│   ├── BookList.tsx        # Library display with search
+│   ├── WishList.tsx        # Wishlist display with Amazon links
+│   ├── PhotoUpload.tsx     # Image upload with progress
+│   ├── ManualBookEntry.tsx # Manual book input form
+│   ├── ThemeToggle.tsx     # Dark/light mode toggle
+│   └── ThemeProvider.tsx   # Theme context provider
+├── lib/
+│   └── storage.ts          # Book storage and deduplication
+├── types/
+│   └── book.ts             # TypeScript type definitions
+├── data/                   # User book data (gitignored)
+│   ├── books-{userId}.json
+│   └── wishlist-{userId}.json
+└── public/                 # Static assets
+```
+
+## 🔐 Data Storage
+
+- **User Isolation**: Each user's data is stored in separate JSON files
+- **File Format**: 
+  - `data/books-{userId}.json` - User's library
+  - `data/wishlist-{userId}.json` - User's wishlist
+- **Privacy**: Data files are excluded from version control (`.gitignore`)
+- **Persistence**: All changes are automatically saved to disk
+
+## 🎯 Key Features Explained
+
+### Smart Deduplication
+
+The app uses advanced fuzzy matching to prevent duplicate entries:
+- **Word Overlap Detection**: Compares common words between titles
+- **Levenshtein Distance**: Measures similarity between strings
+- **Threshold-based Matching**: Configurable similarity thresholds
+
+### OCR Filtering
+
+Automatically removes common artifacts:
+- Page numbers and dates
+- ISBNs and barcodes
+- Publishing metadata
+- Short strings (< 3 characters)
+- Non-alphabetic content
+
+### Theme System
+
+- System preference detection on first load
+- Persistent theme selection using localStorage
+- Smooth transitions between modes
+- Optimized color palettes for both themes
+
+## 🚧 Development
+
+### Running Tests
+```bash
+npm run lint
+```
+
+### Building for Production
+```bash
+npm run build
+npm start
+```
+
+### Environment Variables
+All required environment variables are documented in the setup section. Never commit `.env.local` to version control.
+
+## 📝 Notes
+
 - **OCR Accuracy**: Depends on image quality, lighting, and text clarity
-- **Deduplication**: Uses advanced fuzzy matching with word overlap detection and Levenshtein distance to identify similar titles
-- **OCR Filtering**: Automatically removes common artifacts like page numbers, dates, ISBNs, and metadata
-- **Storage**: Book data is stored locally in the `data` directory (excluded from git)
-- **Processing Time**: Varies based on image size and complexity (typically 10-30 seconds)
+- **Processing Time**: Varies by image size (typically 10-30 seconds)
+- **Browser Support**: Modern browsers with ES2020+ support
+- **Mobile Responsive**: Optimized for all screen sizes
+- **Performance**: Client-side rendering for instant interactions
 
-## Development
+## 🔮 Future Enhancements
 
-The app consists of:
-- `app/page.tsx` - Main page component with library management
-- `app/api/process-image/route.ts` - API endpoint for OCR processing with improved title extraction
-- `app/api/books/route.ts` - API endpoint for book management (GET, POST, DELETE)
-- `app/api/export/route.ts` - API endpoint for exporting books (CSV/JSON)
-- `lib/storage.ts` - Book storage and advanced deduplication logic
-- `components/PhotoUpload.tsx` - Photo upload component with progress indicator
-- `components/BookList.tsx` - Book library display component with search
-- `components/ManualBookEntry.tsx` - Manual book entry form component
+- [ ] Book cover images via Google Books API
+- [ ] Advanced search and filtering
+- [ ] Reading progress tracking
+- [ ] Book ratings and reviews
+- [ ] Collection sharing
+- [ ] Cloud storage integration
+- [ ] Mobile app (React Native)
+
+## 📄 License
+
+This project is private and not yet licensed.
+
+## 🤝 Contributing
+
+This is a personal project. Contributions are welcome via pull requests.
+
+---
+
+**Built with ❤️ using Next.js, React, and modern web technologies**

@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getAllWishList, deleteFromWishList, addToWishList, moveToLibrary, moveToWishList } from '@/lib/storage';
+import { getCoordinator } from '@/lib/agents/coordinator';
 
 export async function GET() {
   try {
@@ -12,8 +13,21 @@ export async function GET() {
       );
     }
     
-    const wishList = await getAllWishList(session.user.id);
-    return NextResponse.json({ wishList });
+    const coordinator = getCoordinator();
+    const context = coordinator.createContext(session);
+    
+    const result = await coordinator.executeAgent('wishlist', context, {
+      action: 'get',
+    });
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || 'Failed to fetch wish list' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ wishList: result.data || [] });
   } catch (error) {
     console.error('Error fetching wish list:', error);
     return NextResponse.json(
@@ -35,7 +49,13 @@ export async function POST(request: NextRequest) {
     
     const { title, action, id } = await request.json();
     
-    if (action === 'add') {
+    // Default to 'add' if no action is provided but title is present
+    const resolvedAction = action || (title ? 'add' : undefined);
+    
+    const coordinator = getCoordinator();
+    const context = coordinator.createContext(session);
+    
+    if (resolvedAction === 'add') {
       if (!title || typeof title !== 'string' || !title.trim()) {
         return NextResponse.json(
           { error: 'Book title is required' },
@@ -43,14 +63,24 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const result = await addToWishList(session.user.id, title.trim());
+      const result = await coordinator.executeAgent('wishlist', context, {
+        action: 'add',
+        title: title.trim(),
+      });
+      
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error || 'Failed to add to wishlist' },
+          { status: 500 }
+        );
+      }
       
       return NextResponse.json({
         success: true,
-        book: result.book,
-        isDuplicate: result.isDuplicate,
+        book: result.data?.book || null,
+        isDuplicate: result.data?.isDuplicate || false,
       });
-    } else if (action === 'move-to-library') {
+    } else if (resolvedAction === 'move-to-library') {
       if (!id) {
         return NextResponse.json(
           { error: 'Book ID is required' },
@@ -58,14 +88,24 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const result = await moveToLibrary(session.user.id, id);
+      const result = await coordinator.executeAgent('wishlist', context, {
+        action: 'move-to-library',
+        id,
+      });
+      
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error || 'Failed to move to library' },
+          { status: 500 }
+        );
+      }
       
       return NextResponse.json({
         success: true,
-        book: result.book,
-        isDuplicate: result.isDuplicate,
+        book: result.data?.book || null,
+        isDuplicate: result.data?.isDuplicate || false,
       });
-    } else if (action === 'move-from-library') {
+    } else if (resolvedAction === 'move-from-library') {
       if (!id) {
         return NextResponse.json(
           { error: 'Book ID is required' },
@@ -73,12 +113,22 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const result = await moveToWishList(session.user.id, id);
+      const result = await coordinator.executeAgent('wishlist', context, {
+        action: 'move-from-library',
+        id,
+      });
+      
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error || 'Failed to move to wishlist' },
+          { status: 500 }
+        );
+      }
       
       return NextResponse.json({
         success: true,
-        book: result.book,
-        isDuplicate: result.isDuplicate,
+        book: result.data?.book || null,
+        isDuplicate: result.data?.isDuplicate || false,
       });
     } else {
       return NextResponse.json(
@@ -115,9 +165,22 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const success = await deleteFromWishList(session.user.id, id);
+    const coordinator = getCoordinator();
+    const context = coordinator.createContext(session);
     
-    if (!success) {
+    const result = await coordinator.executeAgent('wishlist', context, {
+      action: 'delete',
+      id,
+    });
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || 'Failed to delete from wish list' },
+        { status: 500 }
+      );
+    }
+    
+    if (!result.data) {
       return NextResponse.json(
         { error: 'Book not found' },
         { status: 404 }

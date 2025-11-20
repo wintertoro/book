@@ -57,17 +57,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (!mounted) return;
     
     const root = document.documentElement;
-    if (theme === 'dark') {
+    // Always apply a class based on resolved theme
+    if (resolvedTheme === 'dark') {
       root.classList.add('dark');
       root.classList.remove('light');
-    } else if (theme === 'light') {
+    } else {
       root.classList.add('light');
       root.classList.remove('dark');
-    } else {
-      // System preference - remove manual classes, let media query handle it
-      root.classList.remove('dark', 'light');
     }
-  }, [theme, mounted]);
+  }, [resolvedTheme, mounted]);
 
   const toggleTheme = () => {
     if (!mounted) return;

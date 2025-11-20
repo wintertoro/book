@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getAllBooks, deleteBook, addBook } from '@/lib/storage';
+import { getCoordinator } from '@/lib/agents/coordinator';
 
 export async function GET() {
   try {
@@ -12,8 +12,21 @@ export async function GET() {
       );
     }
     
-    const books = await getAllBooks(session.user.id);
-    return NextResponse.json({ books });
+    const coordinator = getCoordinator();
+    const context = coordinator.createContext(session);
+    
+    const result = await coordinator.executeAgent('book', context, {
+      action: 'get',
+    });
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || 'Failed to fetch books' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ books: result.data || [] });
   } catch (error) {
     console.error('Error fetching books:', error);
     return NextResponse.json(
@@ -33,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { title } = await request.json();
+    const { title, sourceImage, author, ocrText } = await request.json();
     
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json(
@@ -42,12 +55,28 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const result = await addBook(session.user.id, title.trim());
+    const coordinator = getCoordinator();
+    const context = coordinator.createContext(session);
+    
+    const result = await coordinator.executeAgent('book', context, {
+      action: 'add',
+      title: title.trim(),
+      sourceImage,
+      author,
+      ocrText,
+    });
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || 'Failed to add book' },
+        { status: 500 }
+      );
+    }
     
     return NextResponse.json({
       success: true,
-      book: result.book,
-      isDuplicate: result.isDuplicate,
+      book: result.data?.book || null,
+      isDuplicate: result.data?.isDuplicate || false,
     });
   } catch (error) {
     console.error('Error adding book:', error);
@@ -78,9 +107,22 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const success = await deleteBook(session.user.id, id);
+    const coordinator = getCoordinator();
+    const context = coordinator.createContext(session);
     
-    if (!success) {
+    const result = await coordinator.executeAgent('book', context, {
+      action: 'delete',
+      id,
+    });
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || 'Failed to delete book' },
+        { status: 500 }
+      );
+    }
+    
+    if (!result.data) {
       return NextResponse.json(
         { error: 'Book not found' },
         { status: 404 }
@@ -96,4 +138,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-
