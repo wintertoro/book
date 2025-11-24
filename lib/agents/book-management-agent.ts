@@ -1,8 +1,10 @@
 import { BaseAgent } from './base-agent';
-import { AgentContext, AgentResult, AddBookParams, BookOperationResult } from './types';
-import { Book, getAllBooks, addBook as storageAddBook, deleteBook as storageDeleteBook } from '@/lib/storage';
-import { DeduplicationAgent } from './deduplication-agent';
+import type { AgentContext, AgentResult, BookOperationResult, DeduplicationParams } from './types';
+import { getAllBooks, addBook as storageAddBook, deleteBook as storageDeleteBook } from '@/lib/storage';
+import type { Book } from '@/lib/storage';
 import { getBookAuthor } from '@/lib/author-search';
+import type { AgentCoordinator } from './coordinator';
+import { getCoordinator } from './coordinator';
 
 /**
  * Book Management Agent
@@ -10,17 +12,17 @@ import { getBookAuthor } from '@/lib/author-search';
  */
 export class BookManagementAgent extends BaseAgent {
   name = 'BookManagementAgent';
-  private deduplicationAgent: DeduplicationAgent;
+  private coordinator?: AgentCoordinator;
 
-  constructor() {
+  constructor(coordinator?: AgentCoordinator) {
     super();
-    this.deduplicationAgent = new DeduplicationAgent();
+    this.coordinator = coordinator;
   }
 
   async execute(
     context: AgentContext,
     params: { action: 'get' | 'add' | 'delete'; title?: string; id?: string; sourceImage?: string; author?: string; ocrText?: string }
-  ): Promise<AgentResult<any>> {
+  ): Promise<AgentResult<Book[] | BookOperationResult | boolean>> {
     this.log('executing', context, { action: params.action });
 
     if (!this.validateContext(context)) {
@@ -32,9 +34,20 @@ export class BookManagementAgent extends BaseAgent {
         case 'get':
           return await this.getAllBooks(context);
         case 'add':
-          return await this.addBook(context, params);
+          if (!params.title) {
+            return this.error('Book title is required');
+          }
+          return await this.addBook(context, {
+            title: params.title,
+            sourceImage: params.sourceImage,
+            author: params.author,
+            ocrText: params.ocrText,
+          });
         case 'delete':
-          return await this.deleteBook(context, params);
+          if (!params.id) {
+            return this.error('Book ID is required');
+          }
+          return await this.deleteBook(context, { id: params.id });
         default:
           return this.error(`Unknown action: ${params.action}`);
       }
@@ -74,11 +87,16 @@ export class BookManagementAgent extends BaseAgent {
       // Get existing books for deduplication check
       const existingBooks = await getAllBooks(context.userId);
 
-      // Use deduplication agent to check for duplicates
-      const dedupResult = await this.deduplicationAgent.execute(context, {
-        newTitle: params.title,
-        existingBooks,
-      });
+      // Use deduplication agent via coordinator to check for duplicates
+      const coordinator = this.coordinator || getCoordinator();
+      const dedupResult = await coordinator.executeAgent<{ isDuplicate: boolean; similarity?: number; matchedBook?: Book }>(
+        'deduplication',
+        context,
+        {
+          newTitle: params.title,
+          existingBooks,
+        } as DeduplicationParams
+      );
 
       if (!dedupResult.success) {
         return this.error('Deduplication check failed');

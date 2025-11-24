@@ -1,4 +1,4 @@
-import { Agent, AgentContext, AgentResult } from './types';
+import type { Agent, AgentContext, AgentResult } from './types';
 import { OCRAgent } from './ocr-agent';
 import { BookManagementAgent } from './book-management-agent';
 import { WishlistAgent } from './wishlist-agent';
@@ -21,9 +21,10 @@ export class AgentCoordinator {
    * Register all available agents
    */
   private registerAgents(): void {
+    // Pass coordinator to agents that need it (for dependency injection)
     this.agents.set('ocr', new OCRAgent());
-    this.agents.set('book', new BookManagementAgent());
-    this.agents.set('wishlist', new WishlistAgent());
+    this.agents.set('book', new BookManagementAgent(this));
+    this.agents.set('wishlist', new WishlistAgent(this));
     this.agents.set('export', new ExportAgent());
     this.agents.set('deduplication', new DeduplicationAgent());
   }
@@ -38,10 +39,10 @@ export class AgentCoordinator {
   /**
    * Execute an agent with context
    */
-  async executeAgent<T = any>(
+  async executeAgent<T = unknown>(
     agentName: string,
     context: AgentContext,
-    params: any
+    params: unknown
   ): Promise<AgentResult<T>> {
     const agent = this.getAgent(agentName);
     if (!agent) {
@@ -65,10 +66,15 @@ export class AgentCoordinator {
 
   /**
    * Create context from session
+   * @throws Error if session is invalid or userId is missing
    */
-  createContext(session: any): AgentContext {
+  createContext(session: { user?: { id?: string } } | null | undefined): AgentContext {
+    const userId = session?.user?.id;
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      throw new Error('Invalid session: userId is required');
+    }
     return {
-      userId: session?.user?.id || '',
+      userId,
       session,
     };
   }
@@ -81,10 +87,10 @@ export class AgentCoordinator {
     imageBuffer: Buffer
   ): Promise<AgentResult<{ titles: string[]; rawText: string; author?: string }>> {
     // Step 1: Use OCR agent to extract text
-    const ocrResult = await this.executeAgent('ocr', context, { imageBuffer });
+    const ocrResult = await this.executeAgent<{ titles: string[]; rawText: string; author?: string; confidence?: number }>('ocr', context, { imageBuffer });
 
     if (!ocrResult.success || !ocrResult.data) {
-      return ocrResult;
+      return ocrResult as AgentResult<{ titles: string[]; rawText: string; author?: string }>;
     }
 
     return this.success({
@@ -103,7 +109,7 @@ export class AgentCoordinator {
     sourceImage?: string,
     author?: string,
     ocrText?: string
-  ): Promise<AgentResult<{ book: any; isDuplicate: boolean }>> {
+  ): Promise<AgentResult<{ book: unknown; isDuplicate: boolean }>> {
     return this.executeAgent('book', context, {
       action: 'add',
       title,
@@ -116,7 +122,7 @@ export class AgentCoordinator {
   /**
    * Helper method for success results
    */
-  private success<T>(data: T, metadata?: Record<string, any>): AgentResult<T> {
+  private success<T>(data: T, metadata?: Record<string, unknown>): AgentResult<T> {
     return {
       success: true,
       data,

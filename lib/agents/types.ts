@@ -1,11 +1,11 @@
-import { Book } from '@/lib/storage';
+import type { Book } from '@/lib/storage';
 
 /**
  * Base agent interface that all agents must implement
  */
 export interface Agent {
   name: string;
-  execute(context: AgentContext, params: any): Promise<AgentResult<any>>;
+  execute(context: AgentContext, params: unknown): Promise<AgentResult<unknown>>;
 }
 
 /**
@@ -13,18 +13,18 @@ export interface Agent {
  */
 export interface AgentContext {
   userId: string;
-  session?: any;
-  metadata?: Record<string, any>;
+  session?: unknown;
+  metadata?: Record<string, unknown>;
 }
 
 /**
  * Standard result structure returned by agents
  */
-export interface AgentResult<T = any> {
+export interface AgentResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

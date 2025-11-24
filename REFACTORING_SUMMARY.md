@@ -142,3 +142,4 @@ const result = await agent.execute(context, { imageBuffer });
 
 See `lib/agents/README.md` for detailed architecture documentation.
 
+

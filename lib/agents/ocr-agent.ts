@@ -1,5 +1,5 @@
 import { BaseAgent } from './base-agent';
-import { AgentContext, AgentResult, OCRParams, OCRResult } from './types';
+import type { AgentContext, AgentResult, OCRParams, OCRResult } from './types';
 import { createWorker } from 'tesseract.js';
 import { extractAuthorFromText } from '@/lib/author-search';
 
@@ -13,7 +13,7 @@ export class OCRAgent extends BaseAgent {
   async execute(
     context: AgentContext,
     params: OCRParams
-  ): Promise<AgentResult<any>> {
+  ): Promise<AgentResult<OCRResult>> {
     this.log('processing-image', context);
 
     if (!this.validateContext(context)) {
@@ -29,7 +29,7 @@ export class OCRAgent extends BaseAgent {
       const worker = await createWorker('eng');
 
       // Perform OCR
-      const { data: { text } } = await worker.recognize(params.imageBuffer);
+      const { data: { text, confidence: ocrConfidence } } = await worker.recognize(params.imageBuffer);
 
       // Clean up worker
       await worker.terminate();
@@ -40,11 +40,14 @@ export class OCRAgent extends BaseAgent {
       // Extract author from OCR text
       const author = extractAuthorFromText(text);
 
+      // Calculate average confidence (OCR confidence is 0-100, convert to 0-1)
+      const avgConfidence = ocrConfidence ? ocrConfidence / 100 : undefined;
+
       const result: OCRResult = {
         titles,
         rawText: text,
         author: author || undefined,
-        confidence: 0.8, // Could be enhanced with actual confidence scores
+        confidence: avgConfidence,
       };
 
       this.log('ocr-complete', context, { titlesFound: titles.length });

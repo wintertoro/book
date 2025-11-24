@@ -2,6 +2,8 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getCoordinator } from '@/lib/agents/coordinator';
+import type { BookOperationResult } from '@/lib/agents/types';
+import type { Book } from '@/lib/storage';
 
 export async function GET() {
   try {
@@ -16,7 +18,7 @@ export async function GET() {
     const coordinator = getCoordinator();
     const context = coordinator.createContext(session);
     
-    const result = await coordinator.executeAgent('wishlist', context, {
+    const result = await coordinator.executeAgent<Book[]>('wishlist', context, {
       action: 'get',
     });
     
@@ -27,7 +29,7 @@ export async function GET() {
       );
     }
     
-    return NextResponse.json({ wishList: result.data || [] });
+    return NextResponse.json({ wishList: (result.data as Book[]) || [] });
   } catch (error) {
     console.error('Error fetching wish list:', error);
     return NextResponse.json(
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const result = await coordinator.executeAgent('wishlist', context, {
+      const result = await coordinator.executeAgent<BookOperationResult>('wishlist', context, {
         action: 'add',
         title: title.trim(),
       });
@@ -75,10 +77,11 @@ export async function POST(request: NextRequest) {
         );
       }
       
+      const data = result.data as BookOperationResult;
       return NextResponse.json({
         success: true,
-        book: result.data?.book || null,
-        isDuplicate: result.data?.isDuplicate || false,
+        book: data?.book || null,
+        isDuplicate: data?.isDuplicate || false,
       });
     } else if (resolvedAction === 'move-to-library') {
       if (!id) {
@@ -88,7 +91,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const result = await coordinator.executeAgent('wishlist', context, {
+      const result = await coordinator.executeAgent<BookOperationResult>('wishlist', context, {
         action: 'move-to-library',
         id,
       });
@@ -100,10 +103,11 @@ export async function POST(request: NextRequest) {
         );
       }
       
+      const data = result.data as BookOperationResult;
       return NextResponse.json({
         success: true,
-        book: result.data?.book || null,
-        isDuplicate: result.data?.isDuplicate || false,
+        book: data?.book || null,
+        isDuplicate: data?.isDuplicate || false,
       });
     } else if (resolvedAction === 'move-from-library') {
       if (!id) {
@@ -113,7 +117,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const result = await coordinator.executeAgent('wishlist', context, {
+      const result = await coordinator.executeAgent<BookOperationResult>('wishlist', context, {
         action: 'move-from-library',
         id,
       });
@@ -125,10 +129,11 @@ export async function POST(request: NextRequest) {
         );
       }
       
+      const data = result.data as BookOperationResult;
       return NextResponse.json({
         success: true,
-        book: result.data?.book || null,
-        isDuplicate: result.data?.isDuplicate || false,
+        book: data?.book || null,
+        isDuplicate: data?.isDuplicate || false,
       });
     } else {
       return NextResponse.json(
@@ -168,7 +173,7 @@ export async function DELETE(request: NextRequest) {
     const coordinator = getCoordinator();
     const context = coordinator.createContext(session);
     
-    const result = await coordinator.executeAgent('wishlist', context, {
+    const result = await coordinator.executeAgent<boolean>('wishlist', context, {
       action: 'delete',
       id,
     });

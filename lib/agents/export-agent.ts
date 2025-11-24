@@ -1,6 +1,7 @@
 import { BaseAgent } from './base-agent';
-import { AgentContext, AgentResult, ExportParams, ExportResult } from './types';
+import type { AgentContext, AgentResult, ExportParams, ExportResult } from './types';
 import { getAllBooks } from '@/lib/storage';
+import type { Book } from '@/lib/storage';
 
 /**
  * Export Agent
@@ -12,7 +13,7 @@ export class ExportAgent extends BaseAgent {
   async execute(
     context: AgentContext,
     params: ExportParams
-  ): Promise<AgentResult<any>> {
+  ): Promise<AgentResult<ExportResult>> {
     this.log('exporting', context, { format: params.format });
 
     if (!this.validateContext(context)) {
@@ -41,10 +42,11 @@ export class ExportAgent extends BaseAgent {
   /**
    * Export books as CSV
    */
-  private exportCSV(books: any[]): AgentResult<ExportResult> {
-    const headers = ['Title', 'Added Date'];
+  private exportCSV(books: Book[]): AgentResult<ExportResult> {
+    const headers = ['Title', 'Author', 'Added Date'];
     const rows = books.map(book => [
       `"${book.title.replace(/"/g, '""')}"`,
+      book.author ? `"${book.author.replace(/"/g, '""')}"` : '',
       new Date(book.addedAt).toLocaleDateString(),
     ]);
 
@@ -63,7 +65,7 @@ export class ExportAgent extends BaseAgent {
   /**
    * Export books as JSON
    */
-  private exportJSON(books: any[]): AgentResult<ExportResult> {
+  private exportJSON(books: Book[]): AgentResult<ExportResult> {
     return this.success({
       content: { books },
       mimeType: 'application/json',

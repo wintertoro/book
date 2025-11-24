@@ -269,15 +269,17 @@ export default function Home() {
   return (
     <div className="min-h-screen pb-20 selection:bg-black/20 dark:selection:bg-white/20">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 glass-panel border-b-0">
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-black/80 border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-black dark:bg-white flex items-center justify-center text-white dark:text-black font-bold shadow-lg">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 flex items-center justify-center text-white dark:text-black font-bold shadow-lg ring-2 ring-gray-200/50 dark:ring-gray-700/50">
               L
             </div>
-            <h1 className="text-xl font-bold tracking-tight">Library</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+              Library
+            </h1>
             {process.env.NEXT_PUBLIC_DEV_MODE === 'true' && (
-              <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md font-medium border border-gray-300 dark:border-gray-700">
+              <span className="text-xs px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-semibold border border-amber-200 dark:border-amber-800/50">
                 DEV MODE
               </span>
             )}
@@ -293,23 +295,27 @@ export default function Home() {
       <main className="pt-24 sm:pt-32 px-4 sm:px-6 max-w-7xl mx-auto space-y-12 sm:space-y-16">
 
         {/* Hero Section */}
-        <section className="text-center space-y-6 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium border border-gray-300 dark:border-gray-700">
+        <section className="text-center space-y-8 animate-fade-in">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-600 dark:bg-gray-400"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             AI-Powered Organization
           </div>
 
-          <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-balance">
-            Your Personal <br />
-            <span className="text-gradient">Digital Library</span>
-          </h2>
+          <div className="space-y-4">
+            <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-balance leading-[1.1]">
+              Your Personal <br />
+              <span className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
+                Digital Library
+              </span>
+            </h2>
 
-          <p className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto text-balance font-light">
-            Scan your bookshelf in seconds. Organize your collection effortlessly with our intelligent recognition system.
-          </p>
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-balance font-light leading-relaxed">
+              Scan your bookshelf in seconds. Organize your collection effortlessly with our intelligent recognition system.
+            </p>
+          </div>
         </section>
 
         {/* Actions Section */}
@@ -322,9 +328,10 @@ export default function Home() {
 
         {/* Quote Search Section */}
         <section className="max-w-2xl mx-auto">
-          <div className="glass rounded-2xl p-6 space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <span className="text-xl">🔍</span> Search Quotes
+          <div className="glass rounded-2xl p-6 sm:p-8 space-y-5 border border-gray-200/50 dark:border-gray-800/50 shadow-lg">
+            <h3 className="text-lg sm:text-xl font-semibold flex items-center gap-3 text-gray-900 dark:text-gray-100">
+              <span className="text-2xl">🔍</span> 
+              <span>Search Quotes</span>
             </h3>
             <QuoteSearch />
           </div>
@@ -333,35 +340,36 @@ export default function Home() {
         {/* Pending Review Section */}
         {pendingBooks.length > 0 && (
           <section className="max-w-3xl mx-auto animate-fade-in">
-            <div className="bg-white dark:bg-black rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-              <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  <span className="text-xl">✨</span> Review Detected Books
+            <div className="glass rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-800/50 overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-6 py-5 border-b border-gray-200/50 dark:border-gray-800/50 flex justify-between items-center">
+                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-3">
+                  <span className="text-2xl">✨</span> 
+                  <span>Review Detected Books</span>
                 </h3>
-                <span className="text-xs font-medium px-2.5 py-1 bg-white dark:bg-gray-800 rounded-full text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                <span className="text-xs font-bold px-3 py-1.5 bg-white dark:bg-gray-800 rounded-full text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 shadow-sm">
                   {pendingBooks.length} found
                 </span>
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {pendingBooks.map((book, index) => (
-                  <div key={`${book.title}-${index}`} className="p-4 flex items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{book.title}</span>
+                  <div key={`${book.title}-${index}`} className="p-5 flex items-center justify-between gap-4 hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{book.title}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => handleAddToLibrary(book.title, book.ocrText)}
-                        className="px-3 py-1.5 text-xs font-medium text-white bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-lg transition-colors shadow-sm"
+                        className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 dark:from-white dark:to-gray-100 dark:text-black dark:hover:from-gray-200 dark:hover:to-gray-300 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
                       >
                         Add to Library
                       </button>
                       <button
                         onClick={() => handleAddToWishList(book.title)}
-                        className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        className="px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
                       >
                         Wish List
                       </button>
                       <button
                         onClick={() => handleDiscardPending(book.title)}
-                        className="p-1.5 text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
                         title="Discard"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -381,14 +389,15 @@ export default function Home() {
 
           {/* Main Library Column */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
-                <span className="text-2xl">📚</span> My Library
-                <span className="text-sm font-normal text-gray-400 ml-2">({books.length})</span>
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200/50 dark:border-gray-800/50">
+              <h3 className="text-2xl font-bold flex items-center gap-3 text-gray-900 dark:text-gray-100">
+                <span className="text-3xl">📚</span> 
+                <span>My Library</span>
+                <span className="text-base font-normal text-gray-500 dark:text-gray-400 ml-1">({books.length})</span>
               </h3>
               <button
                 onClick={() => handleExport('csv')}
-                className="text-xs font-medium text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+                className="text-sm font-semibold px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 shadow-sm border border-gray-200 dark:border-gray-700"
               >
                 Export CSV
               </button>
@@ -403,13 +412,14 @@ export default function Home() {
 
           {/* Sidebar / Wishlist Column */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
-                <span className="text-2xl">✨</span> Wish List
-                <span className="text-sm font-normal text-gray-400 ml-2">({wishList.length})</span>
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200/50 dark:border-gray-800/50">
+              <h3 className="text-2xl font-bold flex items-center gap-3 text-gray-900 dark:text-gray-100">
+                <span className="text-3xl">✨</span> 
+                <span>Wish List</span>
+                <span className="text-base font-normal text-gray-500 dark:text-gray-400 ml-1">({wishList.length})</span>
               </h3>
             </div>
-            <div className="bg-white/50 dark:bg-slate-900/50 rounded-2xl p-1 border border-white/20 shadow-sm">
+            <div className="glass rounded-2xl p-1 border border-gray-200/50 dark:border-gray-800/50 shadow-lg">
               <WishList
                 wishList={wishList}
                 onDelete={handleWishListDelete}
@@ -417,9 +427,14 @@ export default function Home() {
               />
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Quick Tip</h4>
-              <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+            <div className="glass rounded-xl p-5 border border-gray-200/50 dark:border-gray-800/50 shadow-md">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <span className="text-sm">💡</span>
+                </div>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">Quick Tip</h4>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pl-10">
                 You can move books between your library and wish list by clicking the arrow icon on any book card.
               </p>
             </div>
@@ -431,22 +446,22 @@ export default function Home() {
         {message && (
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-slide-up w-full max-w-md px-4">
             <div className={`
-              px-6 py-3 rounded-full shadow-2xl backdrop-blur-xl border flex items-center gap-3
+              px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-3
               ${message.type === 'success'
-                ? 'bg-gray-50/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
-                : 'bg-gray-100/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+                ? 'bg-emerald-50/90 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300'
+                : 'bg-red-50/90 dark:bg-red-900/20 border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-300'
               }
             `}>
               {message.type === 'success' ? (
                 <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
                 <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
-              <span className="font-medium text-sm truncate">{message.text}</span>
+              <span className="font-semibold text-sm truncate">{message.text}</span>
             </div>
           </div>
         )}

@@ -1,6 +1,6 @@
 import { BaseAgent } from './base-agent';
-import { AgentContext, AgentResult, DeduplicationParams, DeduplicationResult } from './types';
-import { Book } from '@/lib/storage';
+import type { AgentContext, AgentResult, DeduplicationParams, DeduplicationResult } from './types';
+import type { Book } from '@/lib/storage';
 
 /**
  * Deduplication Agent
@@ -9,10 +9,20 @@ import { Book } from '@/lib/storage';
 export class DeduplicationAgent extends BaseAgent {
   name = 'DeduplicationAgent';
 
+  // Similarity thresholds
+  private static readonly HIGH_SIMILARITY_THRESHOLD = 0.85;
+  private static readonly MEDIUM_SIMILARITY_THRESHOLD = 0.75;
+  private static readonly WORD_OVERLAP_THRESHOLD = 0.7;
+  private static readonly MIN_TITLE_LENGTH = 3;
+  private static readonly MIN_TITLE_LENGTH_FOR_PARTIAL_MATCH = 10;
+  private static readonly MIN_TITLE_LENGTH_FOR_SUBSTRING = 15;
+  private static readonly SHORT_TITLE_LENGTH = 30;
+  private static readonly MIN_WORDS_FOR_OVERLAP = 2;
+
   async execute(
     context: AgentContext,
     params: DeduplicationParams
-  ): Promise<AgentResult<any>> {
+  ): Promise<AgentResult<DeduplicationResult>> {
     this.log('checking-duplicate', context, { title: params.newTitle });
 
     if (!this.validateContext(context)) {
@@ -60,7 +70,7 @@ export class DeduplicationAgent extends BaseAgent {
   private isDuplicate(newTitle: string, existingBooks: Book[]): boolean {
     const normalizedNew = this.normalizeTitle(newTitle);
 
-    if (normalizedNew.length < 3) return false; // Too short to be a valid title
+    if (normalizedNew.length < DeduplicationAgent.MIN_TITLE_LENGTH) return false; // Too short to be a valid title
 
     return existingBooks.some(book => {
       const normalizedExisting = this.normalizeTitle(book.title);
@@ -69,12 +79,14 @@ export class DeduplicationAgent extends BaseAgent {
       if (normalizedNew === normalizedExisting) return true;
 
       // Check if one title contains the other (for partial matches)
-      if (normalizedNew.length > 10 && normalizedExisting.length > 10) {
+      if (normalizedNew.length > DeduplicationAgent.MIN_TITLE_LENGTH_FOR_PARTIAL_MATCH && 
+          normalizedExisting.length > DeduplicationAgent.MIN_TITLE_LENGTH_FOR_PARTIAL_MATCH) {
         const wordsNew = normalizedNew.split(/\s+/);
         const wordsExisting = normalizedExisting.split(/\s+/);
 
         // If one title's words are mostly contained in the other
-        if (wordsNew.length > 2 && wordsExisting.length > 2) {
+        if (wordsNew.length > DeduplicationAgent.MIN_WORDS_FOR_OVERLAP && 
+            wordsExisting.length > DeduplicationAgent.MIN_WORDS_FOR_OVERLAP) {
           const overlap = wordsNew.filter(word =>
             wordsExisting.some(existingWord =>
               existingWord.includes(word) || word.includes(existingWord)
@@ -82,7 +94,7 @@ export class DeduplicationAgent extends BaseAgent {
           ).length;
 
           const minWords = Math.min(wordsNew.length, wordsExisting.length);
-          if (overlap >= Math.ceil(minWords * 0.7)) {
+          if (overlap >= Math.ceil(minWords * DeduplicationAgent.WORD_OVERLAP_THRESHOLD)) {
             return true;
           }
         }
@@ -91,7 +103,7 @@ export class DeduplicationAgent extends BaseAgent {
         if (normalizedNew.includes(normalizedExisting) ||
           normalizedExisting.includes(normalizedNew)) {
           const minLength = Math.min(normalizedNew.length, normalizedExisting.length);
-          if (minLength > 15) {
+          if (minLength > DeduplicationAgent.MIN_TITLE_LENGTH_FOR_SUBSTRING) {
             return true;
           }
         }
@@ -99,10 +111,12 @@ export class DeduplicationAgent extends BaseAgent {
 
       // Check similarity using Levenshtein distance
       const similarity = this.calculateSimilarity(normalizedNew, normalizedExisting);
-      if (similarity > 0.85) return true;
+      if (similarity > DeduplicationAgent.HIGH_SIMILARITY_THRESHOLD) return true;
 
       // For shorter titles, use a higher threshold
-      if (normalizedNew.length < 30 && normalizedExisting.length < 30 && similarity > 0.75) {
+      if (normalizedNew.length < DeduplicationAgent.SHORT_TITLE_LENGTH && 
+          normalizedExisting.length < DeduplicationAgent.SHORT_TITLE_LENGTH && 
+          similarity > DeduplicationAgent.MEDIUM_SIMILARITY_THRESHOLD) {
         return true;
       }
 
@@ -128,7 +142,7 @@ export class DeduplicationAgent extends BaseAgent {
       }
     }
 
-    return bestMatch && bestSimilarity > 0.75 ? bestMatch : null;
+    return bestMatch && bestSimilarity > DeduplicationAgent.MEDIUM_SIMILARITY_THRESHOLD ? bestMatch : null;
   }
 
   /**

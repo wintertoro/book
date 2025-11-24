@@ -1,14 +1,15 @@
 import { BaseAgent } from './base-agent';
-import { AgentContext, AgentResult, WishlistOperationParams, BookOperationResult } from './types';
+import type { AgentContext, AgentResult, WishlistOperationParams, BookOperationResult, DeduplicationParams } from './types';
 import {
-  Book,
   getAllWishList,
   addToWishList as storageAddToWishList,
   deleteFromWishList as storageDeleteFromWishList,
   moveToLibrary as storageMoveToLibrary,
   moveToWishList as storageMoveToWishList,
 } from '@/lib/storage';
-import { DeduplicationAgent } from './deduplication-agent';
+import type { Book } from '@/lib/storage';
+import type { AgentCoordinator } from './coordinator';
+import { getCoordinator } from './coordinator';
 
 /**
  * Wishlist Agent
@@ -16,17 +17,17 @@ import { DeduplicationAgent } from './deduplication-agent';
  */
 export class WishlistAgent extends BaseAgent {
   name = 'WishlistAgent';
-  private deduplicationAgent: DeduplicationAgent;
+  private coordinator?: AgentCoordinator;
 
-  constructor() {
+  constructor(coordinator?: AgentCoordinator) {
     super();
-    this.deduplicationAgent = new DeduplicationAgent();
+    this.coordinator = coordinator;
   }
 
   async execute(
     context: AgentContext,
-    params: WishlistOperationParams | { action: 'get' | 'delete'; id?: string }
-  ): Promise<AgentResult<any>> {
+    params: WishlistOperationParams | { action: 'get' | 'delete' | 'move-to-library' | 'move-from-library'; id?: string; title?: string }
+  ): Promise<AgentResult<Book[] | BookOperationResult | boolean>> {
     this.log('executing', context, { action: params.action });
 
     if (!this.validateContext(context)) {
@@ -38,15 +39,27 @@ export class WishlistAgent extends BaseAgent {
         case 'get':
           return await this.getAllWishList(context);
         case 'add':
+          if (!params.title) {
+            return this.error('Book title is required');
+          }
           return await this.addToWishList(context, params as WishlistOperationParams);
         case 'delete':
-          return await this.deleteFromWishList(context, params as { id: string });
+          if (!params.id) {
+            return this.error('Book ID is required');
+          }
+          return await this.deleteFromWishList(context, { id: params.id });
         case 'move-to-library':
-          return await this.moveToLibrary(context, params as { id: string });
+          if (!params.id) {
+            return this.error('Book ID is required');
+          }
+          return await this.moveToLibrary(context, { id: params.id });
         case 'move-from-library':
-          return await this.moveToWishList(context, params as { id: string });
+          if (!params.id) {
+            return this.error('Book ID is required');
+          }
+          return await this.moveToWishList(context, { id: params.id });
         default:
-          return this.error(`Unknown action: ${params.action}`);
+          return this.error(`Unknown action: ${(params as { action: string }).action}`);
       }
     } catch (error) {
       return this.error(
@@ -84,11 +97,16 @@ export class WishlistAgent extends BaseAgent {
       // Get existing wishlist for deduplication check
       const existingWishList = await getAllWishList(context.userId);
 
-      // Use deduplication agent to check for duplicates
-      const dedupResult = await this.deduplicationAgent.execute(context, {
-        newTitle: params.title,
-        existingBooks: existingWishList,
-      });
+      // Use deduplication agent via coordinator to check for duplicates
+      const coordinator = this.coordinator || getCoordinator();
+      const dedupResult = await coordinator.executeAgent<{ isDuplicate: boolean; similarity?: number; matchedBook?: Book }>(
+        'deduplication',
+        context,
+        {
+          newTitle: params.title,
+          existingBooks: existingWishList,
+        } as DeduplicationParams
+      );
 
       if (!dedupResult.success) {
         return this.error('Deduplication check failed');

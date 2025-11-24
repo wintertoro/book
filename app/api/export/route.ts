@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getCoordinator } from '@/lib/agents/coordinator';
+import type { ExportResult } from '@/lib/agents/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const coordinator = getCoordinator();
     const context = coordinator.createContext(session);
     
-    const result = await coordinator.executeAgent('export', context, {
+    const result = await coordinator.executeAgent<ExportResult>('export', context, {
       format,
     });
     
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const exportData = result.data;
+    const exportData = result.data as ExportResult;
     
     if (format === 'csv') {
       return new NextResponse(exportData.content as string, {

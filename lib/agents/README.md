@@ -232,3 +232,4 @@ Potential new agents:
 - **Notification Agent**: Send alerts for wishlist items
 - **Search Agent**: Advanced search capabilities
 
+

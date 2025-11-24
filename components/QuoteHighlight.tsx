@@ -71,7 +71,7 @@ export default function QuoteHighlight({ imageUrl, onSelect, isProcessing }: Quo
     setCurrentPos(null);
   };
 
-  const getSelectionStyle = () => {
+  const getSelectionStyle = (): React.CSSProperties | null => {
     if (!startPos || !currentPos) return null;
 
     const x = Math.min(startPos.x, currentPos.x);
@@ -109,7 +109,7 @@ export default function QuoteHighlight({ imageUrl, onSelect, isProcessing }: Quo
         {isSelecting && getSelectionStyle() && (
           <div
             className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none z-10"
-            style={getSelectionStyle()}
+            style={getSelectionStyle() || undefined}
           />
         )}
 
@@ -147,4 +147,5 @@ export default function QuoteHighlight({ imageUrl, onSelect, isProcessing }: Quo
     </div>
   );
 }
+
 

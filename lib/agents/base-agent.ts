@@ -1,4 +1,4 @@
-import { Agent, AgentContext, AgentResult } from './types';
+import type { Agent, AgentContext, AgentResult } from './types';
 
 /**
  * Abstract base class for all agents
@@ -10,12 +10,12 @@ export abstract class BaseAgent implements Agent {
   /**
    * Execute the agent's main logic
    */
-  abstract execute(context: AgentContext, params: any): Promise<AgentResult<any>>;
+  abstract execute(context: AgentContext, params: unknown): Promise<AgentResult<unknown>>;
 
   /**
    * Create a successful result
    */
-  protected success<T>(data: T, metadata?: Record<string, any>): AgentResult<T> {
+  protected success<T>(data: T, metadata?: Record<string, unknown>): AgentResult<T> {
     return {
       success: true,
       data,
@@ -26,7 +26,7 @@ export abstract class BaseAgent implements Agent {
   /**
    * Create an error result
    */
-  protected error(message: string, metadata?: Record<string, any>): AgentResult {
+  protected error<T = unknown>(message: string, metadata?: Record<string, unknown>): AgentResult<T> {
     return {
       success: false,
       error: message,
@@ -47,7 +47,7 @@ export abstract class BaseAgent implements Agent {
   /**
    * Log agent execution (can be extended for monitoring)
    */
-  protected log(action: string, context: AgentContext, details?: any): void {
+  protected log(action: string, context: AgentContext, details?: Record<string, unknown>): void {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[${this.name}] ${action}`, {
         userId: context.userId,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getCoordinator } from '@/lib/agents/coordinator';
+import type { OCRResult } from '@/lib/agents/types';
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -39,8 +40,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const data = result.data as OCRResult;
     // Format results for frontend
-    const results = result.data.titles.map(title => ({
+    const results = data.titles.map(title => ({
       title,
       added: false,
       isDuplicate: false, // Will be checked when user adds to library
@@ -48,9 +50,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      ocrText: result.data.rawText,
+      ocrText: data.rawText,
       results,
-      totalFound: result.data.titles.length,
+      totalFound: data.titles.length,
       totalAdded: 0,
       totalDuplicates: 0,
     });
