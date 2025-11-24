@@ -268,112 +268,92 @@ export default function Home() {
 
   return (
     <div className="min-h-screen pb-20 selection:bg-black/20 dark:selection:bg-white/20">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-black/80 border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 flex items-center justify-center text-white dark:text-black font-bold shadow-lg ring-2 ring-gray-200/50 dark:ring-gray-700/50">
-              L
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+      {/* Header - Minimalist */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg sm:text-xl font-light tracking-wide text-[var(--color-foreground)]">
               Library
             </h1>
-            {process.env.NEXT_PUBLIC_DEV_MODE === 'true' && (
-              <span className="text-xs px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-semibold border border-amber-200 dark:border-amber-800/50">
-                DEV MODE
-              </span>
-            )}
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-4">
             <ThemeToggle />
             <AuthButton />
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="pt-24 sm:pt-32 px-4 sm:px-6 max-w-7xl mx-auto space-y-12 sm:space-y-16">
+      {/* Main Content - Minimalist */}
+      <main className="pt-16 sm:pt-20 lg:pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-12 sm:space-y-16 lg:space-y-20">
 
-        {/* Hero Section */}
-        <section className="text-center space-y-8 animate-fade-in">
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold border border-gray-200 dark:border-gray-700 shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            AI-Powered Organization
-          </div>
-
-          <div className="space-y-4">
-            <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-balance leading-[1.1]">
-              Your Personal <br />
-              <span className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
-                Digital Library
-              </span>
+        {/* Hero Section - Minimalist */}
+        <section className="text-center space-y-8 sm:space-y-12 animate-fade-in pt-4 sm:pt-8">
+          <div className="space-y-4 sm:space-y-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light tracking-tight text-balance leading-[1.2] text-[var(--color-foreground)]">
+              Your Personal<br className="hidden sm:block" />
+              <span className="sm:hidden"> </span>Digital Library
             </h2>
 
-            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-balance font-light leading-relaxed">
-              Scan your bookshelf in seconds. Organize your collection effortlessly with our intelligent recognition system.
+            <p className="text-sm sm:text-base lg:text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto text-balance font-light leading-relaxed px-4">
+              Scan your bookshelf. Organize your collection.
             </p>
           </div>
         </section>
 
-        {/* Actions Section */}
-        <section className="max-w-2xl mx-auto space-y-8">
+        {/* Primary Actions Section - Most Important */}
+        <section className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
           <PhotoUpload onUpload={handleUpload} isProcessing={isProcessing} />
-          <div className="flex justify-center">
+          <div className="flex items-center justify-center gap-4 px-4">
+            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800"></div>
+            <span className="text-xs text-gray-400 dark:text-gray-600 font-light uppercase tracking-wide">or</span>
+            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800"></div>
+          </div>
+          <div className="flex justify-center px-4">
             <ManualBookEntry onAdd={handleManualAdd} />
           </div>
         </section>
 
-        {/* Quote Search Section */}
-        <section className="max-w-2xl mx-auto">
-          <div className="glass rounded-2xl p-6 sm:p-8 space-y-5 border border-gray-200/50 dark:border-gray-800/50 shadow-lg">
-            <h3 className="text-lg sm:text-xl font-semibold flex items-center gap-3 text-gray-900 dark:text-gray-100">
-              <span className="text-2xl">🔍</span> 
-              <span>Search Quotes</span>
-            </h3>
-            <QuoteSearch />
-          </div>
-        </section>
-
-        {/* Pending Review Section */}
+        {/* Pending Review Section - Improved Prominence */}
         {pendingBooks.length > 0 && (
-          <section className="max-w-3xl mx-auto animate-fade-in">
-            <div className="glass rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-800/50 overflow-hidden">
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-6 py-5 border-b border-gray-200/50 dark:border-gray-800/50 flex justify-between items-center">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-3">
-                  <span className="text-2xl">✨</span> 
-                  <span>Review Detected Books</span>
-                </h3>
-                <span className="text-xs font-bold px-3 py-1.5 bg-white dark:bg-gray-800 rounded-full text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 shadow-sm">
-                  {pendingBooks.length} found
-                </span>
+          <section className="max-w-3xl mx-auto animate-fade-in px-4">
+            <div className="border-2 border-[var(--color-foreground)] overflow-hidden">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--color-foreground)] flex justify-between items-center bg-[var(--color-foreground)] text-white dark:text-black dark:bg-white">
+                <div>
+                  <h3 className="font-light text-sm uppercase tracking-wide mb-0.5">
+                    Review Detected Books
+                  </h3>
+                  <p className="text-xs font-light opacity-90">
+                    {pendingBooks.length} {pendingBooks.length === 1 ? 'book' : 'books'} found
+                  </p>
+                </div>
               </div>
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-black">
                 {pendingBooks.map((book, index) => (
-                  <div key={`${book.title}-${index}`} className="p-5 flex items-center justify-between gap-4 hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{book.title}</span>
-                    <div className="flex items-center gap-2 shrink-0">
+                  <div key={`${book.title}-${index}`} className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors">
+                    <span className="font-light text-sm text-[var(--color-foreground)] flex-1">{book.title}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 w-full sm:w-auto">
                       <button
                         onClick={() => handleAddToLibrary(book.title, book.ocrText)}
-                        className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 dark:from-white dark:to-gray-100 dark:text-black dark:hover:from-gray-200 dark:hover:to-gray-300 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                        className="px-4 py-2 text-xs font-light text-white bg-black dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-100 transition-all duration-200 border border-black dark:border-white uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2 flex-1 sm:flex-none"
+                        aria-label={`Add ${book.title} to library`}
                       >
                         Add to Library
                       </button>
                       <button
                         onClick={() => handleAddToWishList(book.title)}
-                        className="px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
+                        className="px-4 py-2 text-xs font-light text-[var(--color-foreground)] bg-transparent border border-gray-300 dark:border-gray-700 hover:border-[var(--color-foreground)] transition-all duration-200 uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2 flex-1 sm:flex-none"
+                        aria-label={`Add ${book.title} to wish list`}
                       >
                         Wish List
                       </button>
                       <button
                         onClick={() => handleDiscardPending(book.title)}
-                        className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
+                        className="p-2 text-gray-400 hover:text-[var(--color-foreground)] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2"
+                        aria-label={`Discard ${book.title}`}
                         title="Discard"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                     </div>
@@ -384,23 +364,28 @@ export default function Home() {
           </section>
         )}
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-          {/* Main Library Column */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-200/50 dark:border-gray-800/50">
-              <h3 className="text-2xl font-bold flex items-center gap-3 text-gray-900 dark:text-gray-100">
-                <span className="text-3xl">📚</span> 
-                <span>My Library</span>
-                <span className="text-base font-normal text-gray-500 dark:text-gray-400 ml-1">({books.length})</span>
-              </h3>
-              <button
-                onClick={() => handleExport('csv')}
-                className="text-sm font-semibold px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 shadow-sm border border-gray-200 dark:border-gray-700"
-              >
-                Export CSV
-              </button>
+        {/* Content Grid - Improved Hierarchy */}
+        <div className="space-y-12 sm:space-y-16">
+          {/* Main Library Section - Primary Content */}
+          <section className="space-y-6 sm:space-y-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
+              <div>
+                <h3 className="text-base sm:text-lg font-light tracking-wide text-[var(--color-foreground)] uppercase mb-1">
+                  My Library
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                  {books.length} {books.length === 1 ? 'book' : 'books'} in your collection
+                </p>
+              </div>
+              {books.length > 0 && (
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="text-xs font-light px-4 py-2 text-[var(--color-foreground)] bg-transparent border border-gray-300 dark:border-gray-700 hover:border-[var(--color-foreground)] transition-all duration-200 uppercase tracking-wide whitespace-nowrap"
+                  aria-label="Export library as CSV"
+                >
+                  Export CSV
+                </button>
+              )}
             </div>
             <BookList
               books={books}
@@ -408,60 +393,79 @@ export default function Home() {
               onMoveToWishList={handleMoveToWishList}
               onBooksUpdated={loadBooks}
             />
-          </div>
+          </section>
 
-          {/* Sidebar / Wishlist Column */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-200/50 dark:border-gray-800/50">
-              <h3 className="text-2xl font-bold flex items-center gap-3 text-gray-900 dark:text-gray-100">
-                <span className="text-3xl">✨</span> 
-                <span>Wish List</span>
-                <span className="text-base font-normal text-gray-500 dark:text-gray-400 ml-1">({wishList.length})</span>
-              </h3>
+          {/* Wishlist Section - Secondary Content */}
+          <section className="space-y-6 sm:space-y-8">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-800">
+              <div>
+                <h3 className="text-base sm:text-lg font-light tracking-wide text-[var(--color-foreground)] uppercase mb-1">
+                  Wish List
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                  {wishList.length} {wishList.length === 1 ? 'book' : 'books'} you want to read
+                </p>
+              </div>
             </div>
-            <div className="glass rounded-2xl p-1 border border-gray-200/50 dark:border-gray-800/50 shadow-lg">
+            <div className="border border-gray-200 dark:border-gray-800">
               <WishList
                 wishList={wishList}
                 onDelete={handleWishListDelete}
                 onMoveToLibrary={handleMoveToLibrary}
               />
             </div>
+          </section>
 
-            <div className="glass rounded-xl p-5 border border-gray-200/50 dark:border-gray-800/50 shadow-md">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <span className="text-sm">💡</span>
-                </div>
-                <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">Quick Tip</h4>
+          {/* Quote Search Section - Tertiary Feature */}
+          <section className="max-w-2xl mx-auto">
+            <div className="border border-gray-200 dark:border-gray-800 p-6 sm:p-8 space-y-4 sm:space-y-6">
+              <div>
+                <h3 className="text-sm sm:text-base font-light tracking-wide text-[var(--color-foreground)] uppercase mb-1">
+                  Search Quotes
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                  Find quotes across your library
+                </p>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pl-10">
-                You can move books between your library and wish list by clicking the arrow icon on any book card.
-              </p>
+              <QuoteSearch />
             </div>
-          </div>
-
+          </section>
         </div>
 
-        {/* Message Toast */}
+        {/* Message Toast - Improved UX */}
         {message && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-slide-up w-full max-w-md px-4">
+          <div 
+            className="fixed bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 z-50 animate-slide-up w-full max-w-md px-4"
+            role="alert"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             <div className={`
-              px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-3
+              px-4 sm:px-6 py-3 sm:py-4 border flex items-start gap-3 bg-white dark:bg-black shadow-lg
               ${message.type === 'success'
-                ? 'bg-emerald-50/90 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300'
-                : 'bg-red-50/90 dark:bg-red-900/20 border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-300'
+                ? 'border-gray-300 dark:border-gray-700 text-[var(--color-foreground)]'
+                : 'border-gray-800 dark:border-gray-200 text-[var(--color-foreground)]'
               }
             `}>
               {message.type === 'success' ? (
-                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
-              <span className="font-semibold text-sm truncate">{message.text}</span>
+              <span className="font-light text-sm sm:text-base flex-1">{message.text}</span>
+              <button
+                onClick={() => setMessage(null)}
+                className="text-gray-400 hover:text-[var(--color-foreground)] transition-colors p-1 -mt-1 -mr-1"
+                aria-label="Dismiss message"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
         )}

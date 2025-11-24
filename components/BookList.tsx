@@ -173,10 +173,9 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
 
   if (books.length === 0) {
     return (
-      <div className="text-center py-20 text-[var(--color-gray-400)] glass rounded-2xl border-dashed border-[var(--color-gray-200)] dark:border-[var(--color-gray-800)]">
-        <div className="text-5xl mb-4 opacity-50">📚</div>
-        <p className="text-lg font-medium mb-2 text-[var(--color-foreground)]">Your library is empty</p>
-        <p className="text-sm text-[var(--color-gray-500)]">Upload a photo or add manually to get started</p>
+      <div className="text-center py-20 text-gray-400 dark:text-gray-600 border border-dashed border-gray-200 dark:border-gray-800">
+        <p className="text-sm font-light mb-2 text-[var(--color-foreground)] uppercase tracking-wide">Your library is empty</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 font-light">Upload a photo or add manually to get started</p>
       </div>
     );
   }
@@ -196,12 +195,12 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
             placeholder="Search by title, author, or genre..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-white/50 dark:bg-[var(--color-background)]/50 backdrop-blur-sm border border-[var(--color-gray-200)] dark:border-[var(--color-gray-700)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)]/20 focus:border-[var(--color-foreground)] transition-all text-base shadow-sm"
+            className="w-full pl-12 pr-4 py-3 bg-transparent border-b border-[var(--color-gray-300)] dark:border-[var(--color-gray-700)] focus:outline-none focus:border-[var(--color-foreground)] transition-all text-sm font-light"
           />
           {searchTerm && (
             <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-              <span className="text-xs text-[var(--color-gray-500)] font-medium bg-[var(--color-gray-100)] dark:bg-[var(--color-gray-800)] px-2.5 py-1 rounded-full">
-                {filteredBooks.length} results
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                {filteredBooks.length}
               </span>
             </div>
           )}
@@ -211,14 +210,14 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={() => setShowGenreFilter(!showGenreFilter)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-gray-700)] dark:text-[var(--color-gray-300)] bg-white/50 dark:bg-black/50 backdrop-blur-sm border border-[var(--color-gray-200)] dark:border-[var(--color-gray-700)] rounded-lg hover:bg-[var(--color-gray-100)] dark:hover:bg-[var(--color-gray-800)] transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-light text-[var(--color-foreground)] bg-transparent border border-[var(--color-gray-300)] dark:border-[var(--color-gray-700)] hover:border-[var(--color-foreground)] transition-all uppercase tracking-wide"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
             Filter by Genre
             {selectedGenres.size > 0 && (
-              <span className="ml-1 px-2 py-0.5 text-xs bg-black dark:bg-white text-white dark:text-black rounded-full">
+              <span className="ml-1 px-2 py-0.5 text-xs bg-black dark:bg-white text-white dark:text-black">
                 {selectedGenres.size}
               </span>
             )}
@@ -228,7 +227,7 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
             <button
               onClick={handleBackfillGenres}
               disabled={isBackfilling}
-              className="px-4 py-2 text-sm font-medium text-[var(--color-gray-700)] dark:text-[var(--color-gray-300)] bg-white/50 dark:bg-black/50 backdrop-blur-sm border border-[var(--color-gray-200)] dark:border-[var(--color-gray-700)] rounded-lg hover:bg-[var(--color-gray-100)] dark:hover:bg-[var(--color-gray-800)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-xs font-light text-[var(--color-foreground)] bg-transparent border border-[var(--color-gray-300)] dark:border-[var(--color-gray-700)] hover:border-[var(--color-foreground)] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isBackfilling ? 'Tagging...' : `Tag Genres (${booksWithoutGenres} books)`}
             </button>
@@ -237,24 +236,24 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
           {selectedGenres.size > 0 && (
             <button
               onClick={() => setSelectedGenres(new Set())}
-              className="px-3 py-2 text-xs font-medium text-[var(--color-gray-500)] hover:text-[var(--color-gray-700)] dark:hover:text-[var(--color-gray-300)]"
+              className="px-3 py-2 text-xs font-light text-gray-500 dark:text-gray-400 hover:text-[var(--color-foreground)] uppercase tracking-wide"
             >
-              Clear filters
+              Clear
             </button>
           )}
         </div>
 
         {/* Genre Filter Pills */}
         {showGenreFilter && allGenres.length > 0 && (
-          <div className="flex flex-wrap gap-2 p-4 bg-white/30 dark:bg-black/30 backdrop-blur-sm border border-[var(--color-gray-200)] dark:border-[var(--color-gray-700)] rounded-xl">
+          <div className="flex flex-wrap gap-2 p-4 border border-[var(--color-gray-200)] dark:border-[var(--color-gray-800)]">
             {allGenres.map(genre => (
               <button
                 key={genre}
                 onClick={() => toggleGenre(genre)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                className={`px-3 py-1.5 text-xs font-light transition-all ${
                   selectedGenres.has(genre)
                     ? 'bg-black dark:bg-white text-white dark:text-black'
-                    : 'bg-white/50 dark:bg-black/50 text-[var(--color-gray-700)] dark:text-[var(--color-gray-300)] border border-[var(--color-gray-200)] dark:border-[var(--color-gray-700)] hover:bg-[var(--color-gray-100)] dark:hover:bg-[var(--color-gray-800)]'
+                    : 'bg-transparent text-[var(--color-foreground)] border border-[var(--color-gray-300)] dark:border-[var(--color-gray-700)] hover:border-[var(--color-foreground)]'
                 }`}
               >
                 {genre}
@@ -266,19 +265,19 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
         {/* Active Filters Display */}
         {selectedGenres.size > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-[var(--color-gray-500)] font-medium">Active filters:</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-light uppercase tracking-wide">Active:</span>
             {Array.from(selectedGenres).map(genre => (
               <span
                 key={genre}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-black dark:bg-white text-white dark:text-black rounded-full"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-light bg-black dark:bg-white text-white dark:text-black"
               >
                 {genre}
                 <button
                   onClick={() => toggleGenre(genre)}
                   className="hover:opacity-70"
                 >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </span>
@@ -287,40 +286,48 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBooks.map((book) => (
           <div
             key={book.id}
-            className="group relative glass glass-hover rounded-2xl p-5 flex flex-col justify-between h-full"
+            className="group relative border border-gray-200 dark:border-gray-800 p-6 flex flex-col justify-between h-full hover:border-[var(--color-foreground)]/30 transition-all duration-200"
           >
             <div className="flex items-start gap-4">
-              <div className="min-w-[40px] h-14 bg-[var(--color-gray-100)] dark:bg-[var(--color-gray-800)] rounded-lg flex items-center justify-center text-xl shadow-sm border border-[var(--color-gray-200)] dark:border-[var(--color-gray-700)]">
+              <div className="min-w-[32px] h-12 bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-sm border border-gray-200 dark:border-gray-800">
                 📖
               </div>
               <div className="flex-1 min-w-0">
                 <button
                   onClick={() => router.push(`/books/${book.id}`)}
-                  className="text-left w-full"
+                  className="text-left w-full group/title"
+                  aria-label={`View details for ${book.title}`}
                 >
-                  <h3 className="text-base font-semibold text-[var(--color-foreground)] leading-tight line-clamp-2 mb-1 group-hover:text-[var(--color-gray-600)] dark:group-hover:text-[var(--color-gray-400)] transition-colors hover:underline">
+                  <h3 className="text-sm font-light text-[var(--color-foreground)] leading-tight line-clamp-2 mb-1.5 group-hover/title:underline transition-all">
                     {book.title}
                   </h3>
                 </button>
                 {book.author && (
-                  <div className="mb-2">
-                    <span className="text-sm text-[var(--color-gray-600)] dark:text-[var(--color-gray-400)] font-medium">
-                      by {book.author}
+                  <div className="mb-1.5">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                      {book.author}
                     </span>
                   </div>
                 )}
                 {book.genres && book.genres.length > 0 && (
-                  <div className="mb-2">
-                    <span className="text-xs text-[var(--color-gray-600)] dark:text-[var(--color-gray-400)] font-medium">
-                      Genres: {book.genres.join(', ')}
-                    </span>
+                  <div className="mb-2 flex flex-wrap gap-1">
+                    {book.genres.slice(0, 2).map((genre, idx) => (
+                      <span key={idx} className="text-[10px] text-gray-400 dark:text-gray-600 font-light uppercase tracking-wider">
+                        {genre}{idx < Math.min(book.genres.length, 2) - 1 ? ',' : ''}
+                      </span>
+                    ))}
+                    {book.genres.length > 2 && (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-600 font-light">
+                        +{book.genres.length - 2}
+                      </span>
+                    )}
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-[11px] text-[var(--color-gray-400)] font-medium uppercase tracking-wider">
+                <div className="flex items-center gap-2 text-[10px] text-gray-400 dark:text-gray-600 font-light uppercase tracking-wider">
                   <span>
                     Added: {(() => {
                       const addedDate = new Date(book.addedAt);
@@ -355,47 +362,50 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-[var(--color-gray-200)] dark:border-[var(--color-gray-800)] flex justify-between items-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+            {/* Actions - Always visible for better mobile UX */}
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 flex flex-wrap justify-between items-center gap-2">
               <button
                 onClick={() => router.push(`/books/${book.id}`)}
-                className="px-3 py-1.5 text-xs font-medium text-[var(--color-gray-700)] dark:text-[var(--color-gray-300)] bg-[var(--color-gray-100)] dark:bg-[var(--color-gray-800)] hover:bg-[var(--color-gray-200)] dark:hover:bg-[var(--color-gray-700)] rounded-lg transition-colors flex items-center gap-1.5"
-                title="View book details"
+                className="px-3 py-1.5 text-xs font-light text-[var(--color-foreground)] bg-transparent border border-gray-300 dark:border-gray-700 hover:border-[var(--color-foreground)] transition-all uppercase tracking-wide flex items-center gap-1.5"
+                aria-label={`View details for ${book.title}`}
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                View Details
+                View
               </button>
               <div className="flex gap-2">
               {onMoveToWishList && (
                 <button
                   onClick={() => handleMoveToWishList(book.id)}
                   disabled={movingId === book.id || deletingId === book.id}
-                  className="p-2 text-[var(--color-gray-400)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-gray-100)] dark:hover:bg-[var(--color-gray-800)] rounded-lg transition-colors"
+                  className="p-2 text-gray-400 dark:text-gray-600 hover:text-[var(--color-foreground)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2"
+                  aria-label={`Move ${book.title} to wish list`}
                   title="Move to wish list"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </button>
               )}
               <button
                 onClick={() => handleDelete(book.id)}
                 disabled={deletingId === book.id || movingId === book.id}
-                className="p-2 text-[var(--color-gray-400)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-gray-100)] dark:hover:bg-[var(--color-gray-800)] rounded-lg transition-colors"
+                className="p-2 text-gray-400 dark:text-gray-600 hover:text-[var(--color-foreground)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2"
+                aria-label={`Delete ${book.title}`}
                 title="Delete book"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
               </div>
             </div>
 
             {(movingId === book.id || deletingId === book.id) && (
-              <div className="absolute inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-[2px] flex items-center justify-center rounded-2xl z-10">
-                <div className="text-xs font-medium text-[var(--color-gray-700)] dark:text-[var(--color-gray-300)] bg-white dark:bg-[var(--color-background)] px-4 py-2 rounded-full shadow-lg border border-[var(--color-gray-200)] dark:border-[var(--color-gray-800)] animate-pulse">
+              <div className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-10">
+                <div className="text-xs font-light text-[var(--color-foreground)] bg-white dark:bg-black px-4 py-2 border border-gray-200 dark:border-gray-800">
                   {movingId === book.id ? 'Moving...' : 'Deleting...'}
                 </div>
               </div>
@@ -405,8 +415,8 @@ export default function BookList({ books, onDelete, onMoveToWishList, onBooksUpd
       </div>
 
       {filteredBooks.length === 0 && (searchTerm || selectedGenres.size > 0) && (
-        <div className="text-center py-16 text-[var(--color-gray-400)]">
-          <p className="text-base">
+        <div className="text-center py-16 text-gray-400 dark:text-gray-600">
+          <p className="text-sm font-light">
             {searchTerm && selectedGenres.size > 0
               ? `No books found matching "${searchTerm}" with selected genres`
               : searchTerm

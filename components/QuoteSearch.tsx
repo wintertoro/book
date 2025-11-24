@@ -57,7 +57,7 @@ export default function QuoteSearch() {
           placeholder="Search quotes..."
           value={searchTerm}
           onChange={handleInputChange}
-          className="w-full pl-12 pr-12 py-4 bg-white/50 dark:bg-black/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 focus:border-black dark:focus:border-white transition-all text-base shadow-sm"
+          className="w-full pl-12 pr-12 py-3 bg-transparent border-b border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[var(--color-foreground)] transition-all text-sm font-light"
         />
         {isSearching && (
           <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
@@ -74,7 +74,7 @@ export default function QuoteSearch() {
       </div>
 
       {showResults && searchTerm && (
-        <div className="absolute z-50 w-full mt-2 glass rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl max-h-96 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 max-h-96 overflow-y-auto">
           {results.length === 0 ? (
             <div className="p-6 text-center text-gray-500 dark:text-gray-400">
               <p className="text-sm">No quotes found matching "{searchTerm}"</p>
