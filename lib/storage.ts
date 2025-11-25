@@ -25,6 +25,33 @@ export interface PagePhoto {
   quotes: Quote[];
 }
 
+export type ReadingStatus = 'unread' | 'reading' | 'completed' | 'dnf' | 'lent';
+
+export interface BookMetadata {
+  isbn?: string;
+  isbn13?: string;
+  description?: string;
+  pageCount?: number;
+  publishedDate?: string;
+  publisher?: string;
+  language?: string;
+  categories?: string[];
+  averageRating?: number;
+  ratingsCount?: number;
+  coverImageUrl?: string;
+  thumbnailUrl?: string;
+}
+
+export interface ReadingProgress {
+  status: ReadingStatus;
+  currentPage?: number;
+  startedAt?: string;
+  completedAt?: string;
+  rating?: number; // 1-5 stars
+  notes?: string;
+  lentTo?: string; // If status is 'lent'
+}
+
 export interface Book {
   id: string;
   title: string;
@@ -34,6 +61,10 @@ export interface Book {
   pagePhotos?: PagePhoto[];
   quotes?: Quote[];
   genres?: string[];
+  // Rich metadata from Google Books API
+  metadata?: BookMetadata;
+  // Reading tracking
+  readingProgress?: ReadingProgress;
 }
 
 // Get file paths for a specific user
@@ -183,7 +214,13 @@ export async function getAllBooks(userId: string): Promise<Book[]> {
   }
 }
 
-export async function addBook(userId: string, title: string, sourceImage?: string, author?: string): Promise<{ book: Book | null; isDuplicate: boolean }> {
+export async function addBook(
+  userId: string, 
+  title: string, 
+  sourceImage?: string, 
+  author?: string, 
+  bookMetadata?: BookMetadata
+): Promise<{ book: Book | null; isDuplicate: boolean }> {
   await ensureDataDir();
   
   const books = await getAllBooks(userId);
@@ -196,19 +233,47 @@ export async function addBook(userId: string, title: string, sourceImage?: strin
   // Auto-tag with genres (async, don't block) - use author if available for better matching
   const genres = await tagBookWithGenres(title.trim(), author?.trim()).catch(() => []);
   
+  // Use provided author
+  const finalAuthor = author?.trim() || undefined;
+  
   const newBook: Book = {
     id: uuidv4(),
     title: toTitleCase(title),
-    author: author?.trim() || undefined,
+    author: finalAuthor,
     addedAt: new Date().toISOString(),
     sourceImage,
     genres: genres.length > 0 ? genres : undefined,
+    metadata: bookMetadata,
+    readingProgress: {
+      status: 'unread'
+    }
   };
   
   books.push(newBook);
   await fs.writeFile(getBooksFile(userId), JSON.stringify(books, null, 2));
   
   return { book: newBook, isDuplicate: false };
+}
+
+export async function updateBook(userId: string, bookId: string, updates: Partial<Book>): Promise<Book | null> {
+  await ensureDataDir();
+  
+  const books = await getAllBooks(userId);
+  const index = books.findIndex(b => b.id === bookId);
+  
+  if (index === -1) return null;
+  
+  // Protect ID and addedAt from changes
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, addedAt, ...safeUpdates } = updates;
+  
+  books[index] = {
+    ...books[index],
+    ...safeUpdates
+  };
+  
+  await fs.writeFile(getBooksFile(userId), JSON.stringify(books, null, 2));
+  return books[index];
 }
 
 export async function deleteBook(userId: string, id: string): Promise<boolean> {
@@ -237,7 +302,13 @@ export async function getAllWishList(userId: string): Promise<Book[]> {
   }
 }
 
-export async function addToWishList(userId: string, title: string, sourceImage?: string, genres?: string[]): Promise<{ book: Book | null; isDuplicate: boolean }> {
+export async function addToWishList(
+  userId: string, 
+  title: string, 
+  sourceImage?: string, 
+  genres?: string[], 
+  bookMetadata?: BookMetadata
+): Promise<{ book: Book | null; isDuplicate: boolean }> {
   await ensureDataDir();
   
   const wishList = await getAllWishList(userId);
@@ -259,6 +330,10 @@ export async function addToWishList(userId: string, title: string, sourceImage?:
     addedAt: new Date().toISOString(),
     sourceImage,
     genres: bookGenres.length > 0 ? bookGenres : undefined,
+    metadata: bookMetadata,
+    readingProgress: {
+      status: 'unread'
+    }
   };
   
   wishList.push(newBook);
@@ -297,27 +372,25 @@ export async function moveToLibrary(userId: string, wishListId: string): Promise
     return { book: null, isDuplicate: true };
   }
   
-  // Add to library (preserve genres if they exist)
-  const booksList = await getAllBooks(userId);
-  if (isDuplicate(book.title, booksList)) {
-    return { book: null, isDuplicate: true };
-  }
-  
   // Create book with preserved genres - use author if available for better matching
   const genres = book.genres && book.genres.length > 0 
     ? book.genres 
     : await tagBookWithGenres(book.title, book.author).catch(() => []);
   
   const newBook: Book = {
+    ...book,
     id: uuidv4(),
     title: toTitleCase(book.title),
     addedAt: new Date().toISOString(),
     sourceImage: book.sourceImage,
     genres: genres.length > 0 ? genres : undefined,
+    readingProgress: {
+      status: 'unread'
+    }
   };
   
-  booksList.push(newBook);
-  await fs.writeFile(getBooksFile(userId), JSON.stringify(booksList, null, 2));
+  books.push(newBook);
+  await fs.writeFile(getBooksFile(userId), JSON.stringify(books, null, 2));
   
   // Remove from wish list
   await deleteFromWishList(userId, wishListId);
@@ -341,8 +414,8 @@ export async function moveToWishList(userId: string, bookId: string): Promise<{ 
     return { book: null, isDuplicate: true };
   }
   
-  // Add to wish list (preserve genres)
-  const result = await addToWishList(userId, book.title, book.sourceImage, book.genres);
+  // Add to wish list (preserve genres and metadata)
+  const result = await addToWishList(userId, book.title, book.sourceImage, book.genres, book.metadata);
   
   // Remove from library
   if (result.book) {
@@ -354,19 +427,7 @@ export async function moveToWishList(userId: string, bookId: string): Promise<{ 
 
 // Update book genres
 export async function updateBookGenres(userId: string, bookId: string, genres: string[]): Promise<boolean> {
-  await ensureDataDir();
-  
-  const books = await getAllBooks(userId);
-  const bookIndex = books.findIndex(b => b.id === bookId);
-  
-  if (bookIndex === -1) {
-    return false;
-  }
-  
-  books[bookIndex].genres = genres.length > 0 ? genres : undefined;
-  await fs.writeFile(getBooksFile(userId), JSON.stringify(books, null, 2));
-  
-  return true;
+  return !!await updateBook(userId, bookId, { genres });
 }
 
 // Backfill genres for all books without genres
@@ -411,19 +472,7 @@ export async function backfillGenres(userId: string): Promise<{ updated: number;
 
 // Update book author
 export async function updateBookAuthor(userId: string, bookId: string, author: string): Promise<boolean> {
-  await ensureDataDir();
-  
-  const books = await getAllBooks(userId);
-  const bookIndex = books.findIndex(b => b.id === bookId);
-  
-  if (bookIndex === -1) {
-    return false;
-  }
-  
-  books[bookIndex].author = author.trim() || undefined;
-  await fs.writeFile(getBooksFile(userId), JSON.stringify(books, null, 2));
-  
-  return true;
+  return !!await updateBook(userId, bookId, { author: author.trim() || undefined });
 }
 
 // Backfill authors for all books without authors
@@ -601,4 +650,3 @@ export async function searchQuotes(userId: string, searchTerm: string): Promise<
   
   return results;
 }
-

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getCoordinator } from '@/lib/agents/coordinator';
 import type { ExportResult } from '@/lib/agents/types';
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
     
     const { searchParams } = new URL(request.url);
-    const format = (searchParams.get('format') || 'json') as 'csv' | 'json';
+    const format = (searchParams.get('format') || 'json') as 'csv' | 'json' | 'goodreads';
     
     const coordinator = getCoordinator();
     const context = coordinator.createContext(session);
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     
     const exportData = result.data as ExportResult;
     
-    if (format === 'csv') {
+    if (format === 'csv' || format === 'goodreads') {
       return new NextResponse(exportData.content as string, {
         headers: {
           'Content-Type': exportData.mimeType,

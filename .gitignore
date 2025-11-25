@@ -42,3 +42,9 @@ next-env.d.ts
 
 # app data
 /data
+
+/lib/generated/prisma
+
+# local development
+dev.db
+.playwright-mcp/

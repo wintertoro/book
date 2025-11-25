@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  books         Book[]
+  quotes        Quote[]
+}
+
+model Book {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Core Data
+  title         String
+  author        String?
+  
+  // Metadata Enrichment
+  coverUrl      String?
+  description   String?
+  pageCount     Int?
+  publisher     String?
+  publishedDate String?
+  isbn          String?
+  
+  // Organization
+  status        ReadingStatus @default(TBR) // To Be Read
+  readingProgress Int         @default(0)   // Current page
+  rating        Int?          // 1-5 stars
+  
+  // Timestamps
+  addedAt       DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relationships
+  inWishlist    Boolean   @default(false)
+  genres        Genre[]
+  quotes        Quote[]
+  pagePhotos    PagePhoto[]
+
+  @@index([userId])
+}
+
+model Genre {
+  id    String @id @default(cuid())
+  name  String @unique
+  books Book[]
+}
+
+model Quote {
+  id          String   @id @default(cuid())
+  text        String
+  pageNumber  Int?
+  createdAt   DateTime @default(now())
+  
+  bookId      String
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  pagePhotoId String?
+  pagePhoto   PagePhoto? @relation(fields: [pagePhotoId], references: [id])
+
+  @@index([bookId])
+  @@index([userId])
+}
+
+model PagePhoto {
+  id          String   @id @default(cuid())
+  url         String
+  pageNumber  Int?
+  createdAt   DateTime @default(now())
+  
+  bookId      String
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  quotes      Quote[]
+
+  @@index([bookId])
+}
+
+enum ReadingStatus {
+  TBR       // To Be Read
+  READING   // Currently Reading
+  COMPLETED // Finished
+  DNF       // Did Not Finish
+}

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getCoordinator } from '@/lib/agents/coordinator';
 import type { OCRResult } from '@/lib/agents/types';
@@ -41,11 +42,12 @@ export async function POST(request: NextRequest) {
     }
 
     const data = result.data as OCRResult;
-    // Format results for frontend
+    // Format results for frontend with confidence scores
     const results = data.titles.map(title => ({
       title,
       added: false,
       isDuplicate: false, // Will be checked when user adds to library
+      confidence: data.confidence, // Overall OCR confidence
     }));
 
     return NextResponse.json({
@@ -55,6 +57,8 @@ export async function POST(request: NextRequest) {
       totalFound: data.titles.length,
       totalAdded: 0,
       totalDuplicates: 0,
+      confidence: data.confidence,
+      author: data.author,
     });
   } catch (error) {
     console.error('Error processing image:', error);

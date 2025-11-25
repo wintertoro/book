@@ -4,6 +4,7 @@ import { BookManagementAgent } from './book-management-agent';
 import { WishlistAgent } from './wishlist-agent';
 import { ExportAgent } from './export-agent';
 import { DeduplicationAgent } from './deduplication-agent';
+import { MetadataAgent } from './metadata-agent';
 
 /**
  * Agent Coordinator
@@ -27,6 +28,7 @@ export class AgentCoordinator {
     this.agents.set('wishlist', new WishlistAgent(this));
     this.agents.set('export', new ExportAgent());
     this.agents.set('deduplication', new DeduplicationAgent());
+    this.agents.set('metadata', new MetadataAgent());
   }
 
   /**
@@ -143,4 +145,3 @@ export function getCoordinator(): AgentCoordinator {
   }
   return coordinatorInstance;
 }
-

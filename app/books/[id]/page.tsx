@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import QuoteHighlight from '@/components/QuoteHighlight';
-import { Book, Quote, PagePhoto } from '@/lib/storage';
+import type { Book, PagePhoto } from '@/lib/storage';
+import ReadingStatusControl from '@/components/ReadingStatusControl';
 
 export default function BookDetailPage() {
   const params = useParams();
@@ -71,7 +72,7 @@ export default function BookDetailPage() {
   // Reset the search flag when bookId changes
   useEffect(() => {
     hasSearchedAuthorRef.current = false;
-  }, [bookId]);
+  }, []);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -236,6 +237,31 @@ export default function BookDetailPage() {
     }
   };
 
+  // Fetch metadata if missing
+  const handleFetchMetadata = async () => {
+    if (!book) return;
+    
+    try {
+      const response = await fetch(`/api/books/${bookId}/metadata`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: book.title,
+          author: book.author,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBook(data.book);
+        setMessage({ type: 'success', text: 'Book metadata updated' });
+      }
+    } catch (error) {
+      console.error('Error fetching metadata:', error);
+      setMessage({ type: 'error', text: 'Failed to fetch metadata' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -253,6 +279,7 @@ export default function BookDetailPage() {
         <div className="text-center">
           <p className="text-xl font-semibold mb-4">Book not found</p>
           <button
+            type="button"
             onClick={() => router.push('/')}
             className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
           >
@@ -266,105 +293,153 @@ export default function BookDetailPage() {
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 glass-panel border-b-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <button
+            type="button"
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+            className="flex items-center gap-2 text-sm font-light text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors uppercase tracking-wide"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="font-medium">Back to Library</span>
+            Back to Library
           </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="pt-24 sm:pt-32 px-4 sm:px-6 max-w-7xl mx-auto space-y-8">
+      <main className="pt-20 sm:pt-24 px-4 sm:px-6 max-w-7xl mx-auto space-y-12">
         {/* Book Header */}
-        <div className="space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-4xl sm:text-5xl font-bold">{book.title}</h1>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+          {/* Cover Image */}
+          <div className="aspect-[2/3] w-full max-w-sm mx-auto md:max-w-none relative border border-gray-200 dark:border-gray-800 shadow-sm">
+            {book.metadata?.coverImageUrl || book.metadata?.thumbnailUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img 
+                src={book.metadata.coverImageUrl || book.metadata.thumbnailUrl} 
+                alt={`Cover of ${book.title}`} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-8 text-center">
+                <div className="text-4xl mb-4 opacity-20">📖</div>
+                <p className="text-lg font-serif text-gray-400 dark:text-gray-500 line-clamp-3">{book.title}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Metadata */}
+          <div className="md:col-span-2 space-y-8">
+            <div className="space-y-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight text-[var(--color-foreground)]">
+                {book.title}
+              </h1>
               {book.author && (
-                <div className="text-lg text-gray-600 dark:text-gray-400 mt-2">
-                  <span className="font-medium">by {book.author}</span>
-                </div>
-              )}
-              {book.genres && book.genres.length > 0 && (
-                <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                  <span className="font-medium">Genres: </span>
-                  <span>{book.genres.join(', ')}</span>
-                </div>
+                <p className="text-lg sm:text-xl text-gray-500 dark:text-gray-400 font-light">
+                  by {book.author}
+                </p>
               )}
             </div>
-            <button
-              onClick={handleMoveToWishlist}
-              disabled={movingToWishlist}
-              className="px-4 py-2 text-sm font-medium bg-white dark:bg-black text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
-              title="Move to wish list"
-            >
-              {movingToWishlist ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  Moving...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                  Move to Wish List
-                </>
-              )}
-            </button>
-          </div>
-          <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-            <span>
-              Added: {(() => {
-                const addedDate = new Date(book.addedAt);
-                const now = new Date();
-                const diffMs = now.getTime() - addedDate.getTime();
-                const diffMins = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMs / 3600000);
-                const diffDays = Math.floor(diffMs / 86400000);
-                
-                if (diffHours < 1) return 'Just now';
-                if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-                if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-                return addedDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: addedDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-                });
-              })()}
-            </span>
-            {book.quotes && book.quotes.length > 0 && (
-              <span>• {book.quotes.length} quote{book.quotes.length !== 1 ? 's' : ''}</span>
+
+            {/* Reading Status Controls */}
+            <ReadingStatusControl 
+              book={book} 
+              onUpdate={(updatedBook) => {
+                setBook(updatedBook);
+                setMessage({ type: 'success', text: 'Reading status updated' });
+              }}
+            />
+
+            {/* Description */}
+            {book.metadata?.description && (
+              <div className="space-y-2">
+                <h3 className="text-xs font-light uppercase tracking-wide text-gray-400 dark:text-gray-600">Synopsis</h3>
+                <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-300 font-light">
+                  {book.metadata.description.replace(/<[^>]*>?/gm, '')}
+                </p>
+              </div>
             )}
+
+            {/* Details Grid */}
+            {book.metadata && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+                {book.metadata.pageCount && (
+                  <div>
+                    <h4 className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-600 mb-1">Pages</h4>
+                    <p className="text-sm font-light">{book.metadata.pageCount}</p>
+                  </div>
+                )}
+                {book.metadata.publishedDate && (
+                  <div>
+                    <h4 className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-600 mb-1">Published</h4>
+                    <p className="text-sm font-light">{new Date(book.metadata.publishedDate).getFullYear()}</p>
+                  </div>
+                )}
+                {book.metadata.publisher && (
+                  <div className="col-span-2 sm:col-span-1">
+                    <h4 className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-600 mb-1">Publisher</h4>
+                    <p className="text-sm font-light truncate" title={book.metadata.publisher}>{book.metadata.publisher}</p>
+                  </div>
+                )}
+                {(book.metadata.isbn || book.metadata.isbn13) && (
+                  <div>
+                    <h4 className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-600 mb-1">ISBN</h4>
+                    <p className="text-sm font-light font-mono text-xs pt-0.5">{book.metadata.isbn13 || book.metadata.isbn}</p>
+                  </div>
+                )}
+                {book.metadata.averageRating && (
+                  <div>
+                    <h4 className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-600 mb-1">Rating</h4>
+                    <p className="text-sm font-light">{book.metadata.averageRating.toFixed(1)} ⭐</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="pt-6 flex flex-wrap gap-4">
+              {!book.metadata && (
+                <button
+                  type="button"
+                  onClick={handleFetchMetadata}
+                  className="px-6 py-3 text-xs font-light bg-transparent border border-gray-300 dark:border-gray-700 text-[var(--color-foreground)] hover:border-[var(--color-foreground)] transition-all uppercase tracking-wide flex items-center gap-2"
+                >
+                  Fetch Book Details
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleMoveToWishlist}
+                disabled={movingToWishlist}
+                className="px-6 py-3 text-xs font-light bg-transparent border border-gray-300 dark:border-gray-700 text-[var(--color-foreground)] hover:border-[var(--color-foreground)] transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {movingToWishlist ? 'Moving...' : 'Move to Wish List'}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Upload Page Photo Section */}
-        <section className="glass rounded-2xl p-6 space-y-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <span className="text-2xl">📷</span> Upload Page Photo
+        <section className="border border-gray-200 dark:border-gray-800 p-6 sm:p-8 space-y-6">
+          <h2 className="text-lg font-light uppercase tracking-wide text-[var(--color-foreground)] flex items-center gap-3">
+            <span className="text-xl opacity-50">📷</span> Upload Page Photo
           </h2>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+            <div className="flex-1 w-full">
+              <label htmlFor="page-number" className="block text-xs font-light text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
                 Page Number (optional)
               </label>
               <input
+                id="page-number"
                 type="number"
                 value={pageNumber}
                 onChange={(e) => setPageNumber(e.target.value)}
                 placeholder="e.g., 42"
-                className="w-full px-4 py-2 bg-white/50 dark:bg-black/50 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20"
+                className="w-full px-4 py-2 bg-transparent border-b border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[var(--color-foreground)] transition-all font-light"
               />
             </div>
-            <div>
+            <div className="w-full sm:w-auto">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -374,23 +449,12 @@ export default function BookDetailPage() {
                 disabled={uploadingPhoto}
               />
               <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingPhoto}
-                className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-2 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs uppercase tracking-wide border border-black dark:border-white"
               >
-                {uploadingPhoto ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin"></div>
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Upload Photo
-                  </>
-                )}
+                {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
               </button>
             </div>
           </div>
@@ -398,22 +462,27 @@ export default function BookDetailPage() {
 
         {/* Page Photos and Quotes */}
         {book.pagePhotos && book.pagePhotos.length > 0 && (
-          <section className="space-y-6">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <span className="text-2xl">📄</span> Page Photos
+          <section className="space-y-8">
+            <h2 className="text-lg font-light uppercase tracking-wide text-[var(--color-foreground)] flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 pb-4">
+              <span className="text-xl opacity-50">📄</span> Page Photos
             </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {book.pagePhotos.map((pagePhoto) => (
-                <div key={pagePhoto.id} className="glass rounded-2xl p-6 space-y-4">
+                <div key={pagePhoto.id} className="border border-gray-200 dark:border-gray-800 p-6 space-y-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">
+                    <h3 className="font-light text-sm">
                       {pagePhoto.pageNumber ? `Page ${pagePhoto.pageNumber}` : 'Page Photo'}
                     </h3>
                     <button
+                      type="button"
                       onClick={() => setSelectedPagePhoto(pagePhoto)}
-                      className="px-3 py-1 text-xs font-medium bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
+                      className={`px-3 py-1 text-[10px] uppercase tracking-wide border transition-all ${
+                        selectedPagePhoto?.id === pagePhoto.id
+                          ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
+                          : 'bg-transparent text-gray-500 border-gray-300 hover:border-gray-500'
+                      }`}
                     >
-                      {selectedPagePhoto?.id === pagePhoto.id ? 'Selected' : 'Select to Highlight'}
+                      {selectedPagePhoto?.id === pagePhoto.id ? 'Selected' : 'Highlight Text'}
                     </button>
                   </div>
                   
@@ -426,25 +495,27 @@ export default function BookDetailPage() {
                   )}
 
                   {pagePhoto.quotes && pagePhoto.quotes.length > 0 && (
-                    <div className="space-y-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Quotes from this page:
+                    <div className="space-y-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+                      <h4 className="text-xs font-light uppercase tracking-wide text-gray-500">
+                        Quotes from this page
                       </h4>
                       {pagePhoto.quotes.map((quote) => (
                         <div
                           key={quote.id}
-                          className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 relative group"
+                          className="bg-gray-50 dark:bg-gray-900/50 p-4 relative group border-l-2 border-gray-300 dark:border-gray-700"
                         >
-                          <p className="text-sm text-gray-800 dark:text-gray-200 italic">
-                            "{quote.text}"
+                          <p className="text-sm text-gray-800 dark:text-gray-200 italic font-serif leading-relaxed">
+                            &ldquo;{quote.text}&rdquo;
                           </p>
                           <button
+                            type="button"
                             onClick={() => handleDeleteQuote(quote.id)}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-[var(--color-foreground)] transition-all"
                             title="Delete quote"
+                            aria-label="Delete quote"
                           >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
                         </div>
@@ -459,22 +530,22 @@ export default function BookDetailPage() {
 
         {/* All Quotes Section */}
         {book.quotes && book.quotes.length > 0 && (
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <span className="text-2xl">💬</span> All Quotes
+          <section className="space-y-8">
+            <h2 className="text-lg font-light uppercase tracking-wide text-[var(--color-foreground)] flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 pb-4">
+              <span className="text-xl opacity-50">💬</span> All Quotes
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {book.quotes.map((quote) => {
                 const pagePhoto = book.pagePhotos?.find(p => p.id === quote.pagePhotoId);
                 return (
                   <div
                     key={quote.id}
-                    className="glass rounded-xl p-5 space-y-2 group relative"
+                    className="border border-gray-200 dark:border-gray-800 p-6 space-y-4 group relative hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
                   >
-                    <p className="text-base text-gray-800 dark:text-gray-200 italic leading-relaxed">
-                      "{quote.text}"
+                    <p className="text-base text-gray-800 dark:text-gray-200 italic font-serif leading-relaxed">
+                      &ldquo;{quote.text}&rdquo;
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-600 font-light uppercase tracking-wide pt-2 border-t border-gray-100 dark:border-gray-800/50">
                       {quote.pageNumber && (
                         <span>Page {quote.pageNumber}</span>
                       )}
@@ -483,12 +554,14 @@ export default function BookDetailPage() {
                       )}
                     </div>
                     <button
+                      type="button"
                       onClick={() => handleDeleteQuote(quote.id)}
-                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-[var(--color-foreground)] transition-all"
                       title="Delete quote"
+                      aria-label="Delete quote"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   </div>
@@ -502,28 +575,30 @@ export default function BookDetailPage() {
         {message && (
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-slide-up w-full max-w-md px-4">
             <div className={`
-              px-6 py-3 rounded-full shadow-2xl backdrop-blur-xl border flex items-center gap-3
+              px-6 py-4 border flex items-center gap-3 bg-white dark:bg-black shadow-lg
               ${message.type === 'success'
-                ? 'bg-gray-50/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
-                : 'bg-gray-100/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+                ? 'border-gray-300 dark:border-gray-700 text-[var(--color-foreground)]'
+                : 'border-gray-800 dark:border-gray-200 text-[var(--color-foreground)]'
               }
             `}>
               {message.type === 'success' ? (
-                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
-              <span className="font-medium text-sm truncate">{message.text}</span>
+              <span className="font-light text-sm truncate">{message.text}</span>
               <button
+                type="button"
                 onClick={() => setMessage(null)}
-                className="ml-auto p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full"
+                className="ml-auto p-1 hover:opacity-50"
+                aria-label="Dismiss message"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
@@ -533,4 +608,3 @@ export default function BookDetailPage() {
     </div>
   );
 }
-

@@ -8,12 +8,13 @@ import ManualBookEntry from '@/components/ManualBookEntry';
 import ThemeToggle from '@/components/ThemeToggle';
 import AuthButton from '@/components/AuthButton';
 import QuoteSearch from '@/components/QuoteSearch';
-import { Book } from '@/lib/storage';
+import ReadingStats from '@/components/ReadingStats';
+import type { Book } from '@/lib/storage';
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [wishList, setWishList] = useState<Book[]>([]);
-  const [pendingBooks, setPendingBooks] = useState<Array<{ title: string; ocrText?: string }>>([]);
+  const [pendingBooks, setPendingBooks] = useState<Array<{ title: string; ocrText?: string; confidence?: number; author?: string; selected?: boolean }>>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -64,10 +65,12 @@ export default function Home() {
 
       const data = await response.json();
 
-      // Set pending books for review with OCR text
-      const titles = data.results.map((r: any) => ({
+      // Set pending books for review with OCR text and confidence
+      const titles = data.results.map((r: { title: string; confidence?: number }) => ({
         title: r.title,
         ocrText: data.ocrText, // Store OCR text for author extraction
+        confidence: r.confidence,
+        author: data.author,
       }));
       if (titles.length > 0) {
         setPendingBooks(prev => [...prev, ...titles]);
@@ -95,7 +98,7 @@ export default function Home() {
   };
 
   const handleManualAdd = async (title: string) => {
-    setPendingBooks(prev => [...prev, { title }]);
+    setPendingBooks(prev => [...prev, { title, confidence: 1.0 }]); // Manual entries have high confidence
     setMessage({
       type: 'success',
       text: `"${title}" added to review list.`,
@@ -162,7 +165,7 @@ export default function Home() {
         throw new Error('Failed to add to wish list');
       }
       setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
+    } catch {
       setMessage({
         type: 'error',
         text: 'Failed to add to wish list',
@@ -217,7 +220,7 @@ export default function Home() {
         setMessage({ type: 'success', text: 'Moved to library' });
         setTimeout(() => setMessage(null), 3000);
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to move book to library' });
     }
   };
@@ -240,12 +243,12 @@ export default function Home() {
         setMessage({ type: 'success', text: 'Moved to wish list' });
         setTimeout(() => setMessage(null), 3000);
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to move book' });
     }
   };
 
-  const handleExport = (format: 'csv' | 'json') => {
+  const handleExport = (format: 'csv' | 'json' | 'goodreads') => {
     fetch(`/api/export?format=${format}`)
       .then(async (response) => {
         if (!response.ok) throw new Error('Failed to export');
@@ -321,44 +324,114 @@ export default function Home() {
                 <div>
                   <h3 className="font-light text-sm uppercase tracking-wide mb-0.5">
                     Review Detected Books
-                  </h3>
+                </h3>
                   <p className="text-xs font-light opacity-90">
                     {pendingBooks.length} {pendingBooks.length === 1 ? 'book' : 'books'} found
                   </p>
                 </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allSelected = pendingBooks.every(b => b.selected);
+                      setPendingBooks(prev => prev.map(b => ({ ...b, selected: !allSelected })));
+                    }}
+                    className="text-xs font-light uppercase tracking-wide px-3 py-1.5 border border-white/30 dark:border-black/30 hover:bg-white/20 dark:hover:bg-black/20 transition-all"
+                  >
+                    {pendingBooks.every(b => b.selected) ? 'Deselect All' : 'Select All'}
+                  </button>
+                  {pendingBooks.some(b => b.selected) && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const selected = pendingBooks.filter(b => b.selected);
+                        for (const book of selected) {
+                          await handleAddToLibrary(book.title, book.ocrText);
+                        }
+                        setPendingBooks(prev => prev.filter(b => !b.selected));
+                      }}
+                      className="text-xs font-light uppercase tracking-wide px-3 py-1.5 bg-white/20 dark:bg-black/20 border border-white/30 dark:border-black/30 hover:bg-white/30 dark:hover:bg-black/30 transition-all"
+                    >
+                      Add Selected ({pendingBooks.filter(b => b.selected).length})
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-black">
-                {pendingBooks.map((book, index) => (
-                  <div key={`${book.title}-${index}`} className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors">
-                    <span className="font-light text-sm text-[var(--color-foreground)] flex-1">{book.title}</span>
-                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 w-full sm:w-auto">
+                {pendingBooks.map((book, index) => {
+                  const lowConfidence = book.confidence !== undefined && book.confidence < 0.5;
+                  
+                  return (
+                    <div key={`${book.title}-${index}`} className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={book.selected || false}
+                          onChange={(e) => {
+                            const updated = [...pendingBooks];
+                            updated[index] = { ...updated[index], selected: e.target.checked };
+                            setPendingBooks(updated);
+                          }}
+                          className="mt-1 w-4 h-4 border-gray-300 dark:border-gray-700 text-black dark:text-white focus:ring-[var(--color-foreground)]"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-2">
+                            <input
+                              type="text"
+                              value={book.title}
+                              onChange={(e) => {
+                                const updated = [...pendingBooks];
+                                updated[index] = { ...updated[index], title: e.target.value };
+                                setPendingBooks(updated);
+                              }}
+                              className="flex-1 px-2 py-1 text-sm font-light bg-transparent border-b border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[var(--color-foreground)]"
+                              placeholder="Edit title..."
+                            />
+                            {lowConfidence && (
+                              <span className="text-[10px] text-gray-400 dark:text-gray-600 font-light uppercase tracking-wide whitespace-nowrap">
+                                Low confidence
+                              </span>
+                            )}
+                          </div>
+                          {book.author && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-light">
+                              Author: {book.author}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 sm:gap-3 shrink-0 w-full sm:w-auto">
                       <button
+                          type="button"
                         onClick={() => handleAddToLibrary(book.title, book.ocrText)}
-                        className="px-4 py-2 text-xs font-light text-white bg-black dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-100 transition-all duration-200 border border-black dark:border-white uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2 flex-1 sm:flex-none"
-                        aria-label={`Add ${book.title} to library`}
+                          className="px-4 py-2 text-xs font-light text-white bg-black dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-100 transition-all duration-200 border border-black dark:border-white uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2 flex-1 sm:flex-none"
+                          aria-label={`Add ${book.title} to library`}
                       >
                         Add to Library
                       </button>
                       <button
+                          type="button"
                         onClick={() => handleAddToWishList(book.title)}
-                        className="px-4 py-2 text-xs font-light text-[var(--color-foreground)] bg-transparent border border-gray-300 dark:border-gray-700 hover:border-[var(--color-foreground)] transition-all duration-200 uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2 flex-1 sm:flex-none"
-                        aria-label={`Add ${book.title} to wish list`}
+                          className="px-4 py-2 text-xs font-light text-[var(--color-foreground)] bg-transparent border border-gray-300 dark:border-gray-700 hover:border-[var(--color-foreground)] transition-all duration-200 uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2 flex-1 sm:flex-none"
+                          aria-label={`Add ${book.title} to wish list`}
                       >
                         Wish List
                       </button>
                       <button
+                          type="button"
                         onClick={() => handleDiscardPending(book.title)}
-                        className="p-2 text-gray-400 hover:text-[var(--color-foreground)] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2"
-                        aria-label={`Discard ${book.title}`}
+                          className="p-2 text-gray-400 hover:text-[var(--color-foreground)] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2"
+                          aria-label={`Discard ${book.title}`}
                         title="Discard"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -372,21 +445,36 @@ export default function Home() {
               <div>
                 <h3 className="text-base sm:text-lg font-light tracking-wide text-[var(--color-foreground)] uppercase mb-1">
                   My Library
-                </h3>
+              </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
                   {books.length} {books.length === 1 ? 'book' : 'books'} in your collection
                 </p>
               </div>
               {books.length > 0 && (
-                <button
-                  onClick={() => handleExport('csv')}
-                  className="text-xs font-light px-4 py-2 text-[var(--color-foreground)] bg-transparent border border-gray-300 dark:border-gray-700 hover:border-[var(--color-foreground)] transition-all duration-200 uppercase tracking-wide whitespace-nowrap"
-                  aria-label="Export library as CSV"
-                >
-                  Export CSV
-                </button>
+                <div className="flex items-center gap-2">
+              <button
+                    type="button"
+                onClick={() => handleExport('csv')}
+                    className="text-xs font-light px-4 py-2 text-[var(--color-foreground)] bg-transparent border border-gray-300 dark:border-gray-700 hover:border-[var(--color-foreground)] transition-all duration-200 uppercase tracking-wide whitespace-nowrap"
+                    aria-label="Export library as CSV"
+              >
+                Export CSV
+              </button>
+                  <button
+                    type="button"
+                    onClick={() => handleExport('goodreads')}
+                    className="text-xs font-light px-4 py-2 text-[var(--color-foreground)] bg-transparent border border-gray-300 dark:border-gray-700 hover:border-[var(--color-foreground)] transition-all duration-200 uppercase tracking-wide whitespace-nowrap"
+                    aria-label="Export to Goodreads"
+                  >
+                    Goodreads
+                  </button>
+                </div>
               )}
             </div>
+            
+            {/* Reading Stats */}
+            <ReadingStats books={books} />
+            
             <BookList
               books={books}
               onDelete={handleDelete}
@@ -401,7 +489,7 @@ export default function Home() {
               <div>
                 <h3 className="text-base sm:text-lg font-light tracking-wide text-[var(--color-foreground)] uppercase mb-1">
                   Wish List
-                </h3>
+              </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
                   {wishList.length} {wishList.length === 1 ? 'book' : 'books'} you want to read
                 </p>
@@ -458,11 +546,12 @@ export default function Home() {
               )}
               <span className="font-light text-sm sm:text-base flex-1">{message.text}</span>
               <button
+                type="button"
                 onClick={() => setMessage(null)}
                 className="text-gray-400 hover:text-[var(--color-foreground)] transition-colors p-1 -mt-1 -mr-1"
                 aria-label="Dismiss message"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

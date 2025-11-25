@@ -1,10 +1,12 @@
 import { BaseAgent } from './base-agent';
 import type { AgentContext, AgentResult, BookOperationResult, DeduplicationParams } from './types';
 import { getAllBooks, addBook as storageAddBook, deleteBook as storageDeleteBook } from '@/lib/storage';
+import type { BookMetadata } from '@/lib/storage';
 import type { Book } from '@/lib/storage';
 import { getBookAuthor } from '@/lib/author-search';
 import type { AgentCoordinator } from './coordinator';
 import { getCoordinator } from './coordinator';
+import type { MetadataAgentParams, BookMetadataResult } from './metadata-agent';
 
 /**
  * Book Management Agent
@@ -120,18 +122,70 @@ export class BookManagementAgent extends BaseAgent {
         }
       }
 
-      // Add the book
+      // Fetch rich metadata using Metadata Agent
+      let bookMetadata: BookMetadataResult | null = null;
+      try {
+        const metadataResult = await coordinator.executeAgent<BookMetadataResult | null>(
+          'metadata',
+          context,
+          {
+            title: params.title,
+            author: author,
+          } as MetadataAgentParams
+        );
+
+        if (metadataResult.success && metadataResult.data) {
+          bookMetadata = metadataResult.data;
+          
+          // Use author from metadata if not found earlier
+          if (!author && bookMetadata.author) {
+            author = bookMetadata.author;
+          }
+          
+          this.log('metadata-enriched', context, { 
+            title: params.title, 
+            hasCover: !!bookMetadata.coverImageUrl,
+            hasDescription: !!bookMetadata.description
+          });
+        }
+      } catch (error) {
+        this.log('metadata-fetch-failed', context, { error });
+        // Continue without metadata
+      }
+
+      // Convert BookMetadataResult to BookMetadata format
+      const metadata: BookMetadata | undefined = bookMetadata ? {
+        isbn: bookMetadata.isbn,
+        isbn13: bookMetadata.isbn13,
+        description: bookMetadata.description,
+        pageCount: bookMetadata.pageCount,
+        publishedDate: bookMetadata.publishedDate,
+        publisher: bookMetadata.publisher,
+        language: bookMetadata.language,
+        categories: bookMetadata.categories,
+        averageRating: bookMetadata.averageRating,
+        ratingsCount: bookMetadata.ratingsCount,
+        coverImageUrl: bookMetadata.coverImageUrl,
+        thumbnailUrl: bookMetadata.thumbnailUrl,
+      } : undefined;
+      
+      // Use author from params or metadata
+      const finalAuthor = params.author || bookMetadata?.author || undefined;
+
+      // Add the book with metadata
       const result = await storageAddBook(
         context.userId,
         params.title.trim(),
         params.sourceImage,
-        author
+        finalAuthor,
+        metadata
       );
 
       this.log('book-added', context, {
         bookId: result.book?.id,
         isDuplicate: result.isDuplicate,
-        hasAuthor: !!author,
+        hasAuthor: !!finalAuthor,
+        hasMetadata: !!metadata && Object.keys(metadata).length > 0
       });
 
       return this.success(result);
@@ -160,4 +214,3 @@ export class BookManagementAgent extends BaseAgent {
     }
   }
 }
-

@@ -11,6 +11,7 @@ export { BookManagementAgent } from './book-management-agent';
 export { WishlistAgent } from './wishlist-agent';
 export { ExportAgent } from './export-agent';
 export { DeduplicationAgent } from './deduplication-agent';
+export { MetadataAgent } from './metadata-agent';
 export type {
   Agent,
   AgentContext,
@@ -25,5 +26,3 @@ export type {
   DeduplicationParams,
   DeduplicationResult,
 } from './types';
-
-

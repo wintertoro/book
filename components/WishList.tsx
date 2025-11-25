@@ -1,6 +1,6 @@
 'use client';
 
-import { Book } from '@/lib/storage';
+import type { Book } from '@/lib/storage';
 import { useState } from 'react';
 
 interface WishListProps {
@@ -49,6 +49,7 @@ export default function WishList({ wishList, onDelete, onMoveToLibrary }: WishLi
   if (wishList.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400 dark:text-gray-600 border border-dashed border-gray-200 dark:border-gray-800">
+        <div className="text-4xl mb-3 opacity-30">✨</div>
         <p className="text-xs font-light mb-1 text-[var(--color-foreground)] uppercase tracking-wide">Your wish list is empty</p>
         <p className="text-xs text-gray-500 dark:text-gray-400 font-light">Add books you want to read later</p>
       </div>
@@ -59,7 +60,7 @@ export default function WishList({ wishList, onDelete, onMoveToLibrary }: WishLi
     <div className="w-full space-y-4">
       <div className="relative group">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg className="h-4 w-4 text-gray-400 group-focus-within:text-black dark:group-focus-within:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="h-4 w-4 text-gray-400 group-focus-within:text-black dark:group-focus-within:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
@@ -100,13 +101,14 @@ export default function WishList({ wishList, onDelete, onMoveToLibrary }: WishLi
 
               <div className="flex flex-col gap-1.5">
                 <button
+                  type="button"
                   onClick={() => handleMoveToLibrary(book.id)}
                   disabled={movingId === book.id || deletingId === book.id}
                   className="px-3 py-1.5 text-xs font-light text-white dark:text-black bg-black dark:bg-white hover:bg-gray-900 dark:hover:bg-gray-100 transition-all border border-black dark:border-white uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-2"
                   aria-label={`Move ${book.title} to library`}
                   title="Move to library"
                 >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                   <span>To Library</span>
@@ -118,18 +120,20 @@ export default function WishList({ wishList, onDelete, onMoveToLibrary }: WishLi
                     rel="noopener noreferrer"
                     className="p-1 text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
                     title="Buy on Amazon"
+                    aria-label={`Buy ${book.title} on Amazon`}
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </a>
                   <button
+                    type="button"
                     onClick={() => handleDelete(book.id)}
                     disabled={deletingId === book.id || movingId === book.id}
                     className="p-1 text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
                     title="Remove from wish list"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -150,7 +154,7 @@ export default function WishList({ wishList, onDelete, onMoveToLibrary }: WishLi
 
       {filteredWishList.length === 0 && searchTerm && (
         <div className="text-center py-8 text-gray-400">
-          <p className="text-xs">No results for "{searchTerm}"</p>
+          <p className="text-xs">No results for &ldquo;{searchTerm}&rdquo;</p>
         </div>
       )}
     </div>

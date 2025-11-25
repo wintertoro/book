@@ -69,7 +69,7 @@ export interface WishlistOperationParams {
  * Export Agent specific types
  */
 export interface ExportParams {
-  format: 'csv' | 'json';
+  format: 'csv' | 'json' | 'goodreads';
 }
 
 export interface ExportResult {
