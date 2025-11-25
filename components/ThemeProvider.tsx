@@ -69,23 +69,26 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const toggleTheme = () => {
     if (!mounted) return;
-    setTheme((prev) => {
-      if (prev === null) {
-        // Currently using system, switch to opposite of current resolved theme
-        const newTheme = resolvedTheme === 'light' ? 'dark' : 'light';
-        setResolvedTheme(newTheme);
-        localStorage.setItem('theme', newTheme);
-        return newTheme;
-      } else if (prev === 'light') {
-        setResolvedTheme('dark');
-        localStorage.setItem('theme', 'dark');
-        return 'dark';
-      } else {
-        setResolvedTheme('light');
-        localStorage.setItem('theme', 'light');
-        return 'light';
-      }
-    });
+    
+    // Calculate new theme immediately
+    const newTheme = resolvedTheme === 'light' ? 'dark' : 'light';
+    
+    // Apply to DOM immediately for instant feedback (no lag)
+    const root = document.documentElement;
+    if (newTheme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+    
+    // Update localStorage
+    localStorage.setItem('theme', newTheme);
+    
+    // Update state (batched together)
+    setTheme(newTheme);
+    setResolvedTheme(newTheme);
   };
 
   // Always provide context, even before mounting
